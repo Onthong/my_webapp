@@ -130,7 +130,7 @@ td{padding:9px 12px;border-bottom:1px solid var(--border-lt);vertical-align:midd
       <div class="fg">
         <label>ຜູ້ຮັບຜິດຊອບ</label>
         <select id="fAssign">
-          <option value="ບໍ່ລະບຸ">-- ໂຫຼດລາຍຊື່... --</option>
+          <option value="ບໍ່ລະບຸ">-- ເລືອກຜູ້ຮັບຜິດຊອບ --</option>
         </select>
       </div>
       <div class="fg"><label>ວັນທີມອບວຽກ</label><input id="fAssigned" type="date"/></div>
@@ -178,7 +178,8 @@ td{padding:9px 12px;border-bottom:1px solid var(--border-lt);vertical-align:midd
             <th>ວັນທີສຳເລັດແທ້</th>
             <th>ຄວາມສຳຄັນ</th>
             <th>ສະຖານະ</th>
-            <th></th>
+            <th>ຈັດການ</th>
+            <th>ລຶບ</th>
           </tr>
         </thead>
         <tbody id="tbody"></tbody>
@@ -190,7 +191,8 @@ td{padding:9px 12px;border-bottom:1px solid var(--border-lt);vertical-align:midd
 <div class="toast" id="toast"></div>
 
 <script>
-let SCRIPT_URL = localStorage.getItem('https://script.google.com/macros/s/AKfycbw2hiCW0V2AWEJ2BgI2Q7m9TvFX66twqHhedW3wTZKuvUpCY9bu8MHs5a9V0-uRweRUVg/exec') || '';
+// ດຶງ URL ຈາກ LocalStorage ຫຼື ຕັ້ງເປັນຄ່າຫວ່າງ
+let SCRIPT_URL = localStorage.getItem('gs_url') || '';
 let tasks = [];
 let users = [];
 let filterSt = 'all';
@@ -207,7 +209,7 @@ const PRIO_LABEL = {h:'ຮີບດ່ວນ', m:'ປານກາງ', l:'ຕໍ
 const PRIO_CLS   = {h:'p-h', m:'p-m', l:'p-l'};
 
 function toggleCfg() { const p = document.getElementById('cfg-panel'); p.style.display = p.style.display==='none'?'block':'none'; }
-function saveConfig() { SCRIPT_URL = document.getElementById('cfg-url').value; localStorage.setItem('gs_url', SCRIPT_URL); loadFromSheet(); }
+function saveConfig() { SCRIPT_URL = document.getElementById('cfg-url').value; localStorage.setItem('gs_url', SCRIPT_URL); loadFromSheet(); toggleCfg(); }
 function setStatusFilter(f) { filterSt = f; render(); }
 function setPrioFilter(f) { filterPrio = f; render(); }
 function clearDateFilter() { document.getElementById('dateStart').value = ''; document.getElementById('dateEnd').value = ''; render(); }
@@ -220,13 +222,16 @@ function setSync(state, msg) {
 }
 
 async function loadFromSheet() {
-  if(!SCRIPT_URL) return;
+  if(!SCRIPT_URL) {
+      setSync('err', 'ກະລຸນາຕັ້ງຄ່າ URL');
+      toggleCfg();
+      return;
+  }
   setSync('loading', 'ກຳລັງໂຫຼດ...');
   try {
     const res = await fetch(SCRIPT_URL + '?t=' + Date.now(), { redirect: 'follow' });
     const data = await res.json();
     
-    // ຈັດການຂໍ້ມູນວຽກ
     tasks = data.tasks.map(r => ({
       id: Number(r.id), name: r.name, assignee: r.assignee || 'ບໍ່ລະບຸ',
       assigned: r.assigned ? r.assigned.split('T')[0] : '',
@@ -235,7 +240,6 @@ async function loadFromSheet() {
       prio: r.prio, status: r.status || 'todo'
     })).filter(t => t.name);
 
-    // ຈັດການລາຍຊື່ຜູ້ຮັບຜິດຊອບ (Sheet2)
     const userSelect = document.getElementById('fAssign');
     userSelect.innerHTML = '<option value="ບໍ່ລະບຸ">-- ເລືອກຜູ້ຮັບຜິດຊອບ --</option>';
     if(data.users && data.users.length > 0) {
@@ -255,7 +259,12 @@ async function loadFromSheet() {
 async function saveToSheet() {
   setSync('loading', 'ກຳລັງບັນທຶກ...');
   try {
-    await fetch(SCRIPT_URL, { method: 'POST', redirect: 'follow', body: JSON.stringify(tasks) });
+    await fetch(SCRIPT_URL, { 
+        method: 'POST', 
+        redirect: 'follow', 
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(tasks) 
+    });
     setSync('ok', 'ບັນທຶກແລ້ວ');
   } catch(e) { setSync('err', 'ບັນທຶກຜິດພາດ'); }
 }
@@ -280,7 +289,7 @@ function updateChart() {
     options: {
       responsive: true, maintainAspectRatio: false,
       plugins: {
-        title: { display: true, text: 'ວິເຄາະຜົນງານລາຍບຸກຄົນ (ວຽກຄ້າງສູງ = ເຮັດວຽກຊ້າ)', font: {family:'Noto Sans Lao', size:14} },
+        title: { display: true, text: 'ວິເຄາະຜົນງານລາຍບຸກຄົນ', font: {family:'Noto Sans Lao', size:14} },
         legend: { labels: { font: {family:'Noto Sans Lao'} } }
       },
       scales: {
@@ -335,4 +344,69 @@ function render() {
 
   document.getElementById('tbody').innerHTML = vis.map((t, i) => {
     return `<tr>
-      <td>${i+1
+      <td>${i+1}</td>
+      <td><b>${esc(t.name)}</b></td>
+      <td>${esc(t.assignee)}</td>
+      <td class="td-due">${fmtDate(t.assigned)}</td>
+      <td class="td-due">${fmtDate(t.due)}</td>
+      <td class="td-due" style="color:var(--accent)">${fmtDate(t.completed_at)}</td>
+      <td><span class="badge ${PRIO_CLS[t.prio]}">${PRIO_LABEL[t.prio]}</span></td>
+      <td><span class="badge ${ST_CLS[t.status]}">${ST_LABEL[t.status]}</span></td>
+      <td><button class="btn btn-sm ${MV_CLS[t.status]}" onclick="moveTask(${t.id})">${MV_LBL[t.status]}</button></td>
+      <td><button class="btn btn-sm btn-danger" onclick="delTask(${t.id})">ລຶບ</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+async function addTask() {
+  const name = document.getElementById('fName').value.trim();
+  const assignee = document.getElementById('fAssign').value;
+  if(!name) return toast('ກະລຸນາໃສ່ຊື່ວຽກ');
+  
+  tasks.push({
+    id: nextId++, name, assignee,
+    assigned: document.getElementById('fAssigned').value,
+    due: document.getElementById('fDue').value,
+    completed_at: '',
+    prio: document.getElementById('fPrio').value,
+    status: 'todo'
+  });
+  
+  document.getElementById('fName').value = '';
+  document.getElementById('fAssigned').value = '';
+  document.getElementById('fDue').value = '';
+  
+  render();
+  await saveToSheet();
+}
+
+async function moveTask(id) {
+  const t = tasks.find(x => x.id === id);
+  const nextSt = ST_NEXT[t.status];
+  t.status = nextSt;
+  if (nextSt === 'done') t.completed_at = new Date().toISOString().split('T')[0];
+  else if (nextSt === 'todo') t.completed_at = '';
+  render();
+  await saveToSheet();
+}
+
+async function delTask(id) {
+  if(!confirm('ຢືນຢັນການລຶບ?')) return;
+  tasks = tasks.filter(x => x.id !== id);
+  render();
+  await saveToSheet();
+}
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// ເລີ່ມເຮັດວຽກຄັ້ງທຳອິດ
+loadFromSheet();
+</script>
+</body>
+</html>
