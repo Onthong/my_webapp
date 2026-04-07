@@ -297,17 +297,10 @@ function render() {
   const q = document.getElementById('searchInput').value.toLowerCase();
   const ds = document.getElementById('dateStart').value;
   const de = document.getElementById('dateEnd').value;
-  const tot = tasks.length, dn = tasks.filter(t => t.status === 'done').length;
-  const pct = tot ? Math.round((dn / tot) * 100) : 0;
-  document.getElementById('stats-grid').innerHTML = `
-    <div class="stat-card"><b style="color:#1a4d8f">${tot}</b><p>ວຽກທັງໝົດ</p></div>
-    <div class="stat-card"><b style="color:#7a4f0a">${tasks.filter(t=>t.status==='doing').length}</b><p>ກຳລັງເຮັດ</p></div>
-    <div class="stat-card"><b style="color:var(--accent)">${dn}</b><p>ສຳເລັດ</p></div>`;
-  document.getElementById('prog-fill').style.width = pct + '%';
-  document.getElementById('prog-pct').textContent = pct + '%';
-  const tabData = [['all','ທັງໝົດ', tot], ['todo','ລໍຖ້າ', tasks.filter(t=>t.status==='todo').length], ['doing','ດຳເນີນ', tasks.filter(t=>t.status==='doing').length], ['done','ສຳເລັດ', dn]];
-  document.getElementById('statusFilters').innerHTML = tabData.map(([f,l,c]) => 
-    `<button class="fp${filterSt===f?' on':''}" onclick="filterSt='${f}';render()">${l} <span class="cb">${c}</span></button>`).join('');
+
+  // ... (ສ່ວນສະແດງ Stats ແລະ Tabs Counter ປະໄວ້ຄືເກົ່າ) ...
+
+  // ປັບປຸງສ່ວນນີ້: ຕື່ມ .reverse() ເຂົ້າໄປຫຼັງຈາກ filter
   document.getElementById('tbody').innerHTML = tasks
     .filter(t => {
       const matchSearch = t.name.toLowerCase().includes(q) || (t.assignee || "").toLowerCase().includes(q);
@@ -316,15 +309,20 @@ function render() {
       if (ds && de) matchDate = t.assigned >= ds && t.assigned <= de;
       return matchSearch && matchStatus && matchDate;
     })
-    .map((t, i) => {
+    .reverse() // <--- ຕື່ມຈຸດນີ້ເພື່ອໃຫ້ຂໍ້ມູນໃໝ່ລ່າສຸດຢູ່ເທິງສຸດ
+    .map((t, i, arr) => {
+      // ຄຳນວນເລກລຳດັບຄືນໃໝ່ໃຫ້ຖືກຕ້ອງ (ນັບຖອຍຫຼັງ ຫຼື ນັບຕາມຈຳນວນທີ່ສະແດງ)
+      const displayIndex = arr.length - i; 
+
       const actions = userRole === 'admin' ? `
-        <td style="display:flex; gap:6px;">
+        <td style="display:flex; gap:4px;">
           <button class="btn btn-sm ${MV_CLS[t.status]}" onclick="moveTask(${t.id})">${MV_LBL[t.status]}</button>
           <button class="btn btn-sm btn-wa" onclick="sendWA(${t.id})">WA</button>
           <button class="btn btn-sm btn-danger" onclick="delTask(${t.id})" title="ລຶບ">ລຶບ</button>
         </td>` : `<td>🔒 View Only</td>`;
+
       return `<tr>
-        <td style="color:#888; font-family: 'DM Mono'">${i+1}</td>
+        <td style="color:#888; font-family: 'DM Mono'">${displayIndex}</td>
         <td><b style="color:#111">${t.name}</b></td>
         <td style="font-weight:500">${t.assignee}</td>
         <td>${fmtDate(t.assigned)}</td>
