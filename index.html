@@ -171,18 +171,15 @@ function updateChart() {
   const ctx = document.getElementById('performanceChart').getContext('2d');
   const userList = [...new Set(tasks.map(t => t.assignee))];
   
-  // ດຶງຂໍ້ມູນວຽກສຳເລັດ
+  // 1. ຄຳນວນຈຳນວນວຽກ
   const doneData = userList.map(u => tasks.filter(t => t.assignee === u && t.status === 'done').length);
-  
-  // ດຶງຂໍ້ມູນວຽກຄ້າງ
   const pendingData = userList.map(u => tasks.filter(t => t.assignee === u && t.status !== 'done').length);
   
-  // ສ້າງລາຍຊື່ວຽກຄ້າງຂອງແຕ່ລະຄົນເພື່ອສະແດງໃນ Tooltip
+  // 2. ສ້າງລາຍຊື່ວຽກຄ້າງຂອງແຕ່ລະຄົນ (ໃຊ້ສະແດງໃນ Tooltip)
   const pendingDetails = userList.map(u => {
-    return tasks
-      .filter(t => t.assignee === u && t.status !== 'done')
-      .map(t => `• ${t.name}`)
-      .join('\n');
+    const list = tasks.filter(t => t.assignee === u && t.status !== 'done');
+    if (list.length === 0) return 'ບໍ່ມີວຽກຄ້າງ';
+    return list.map(t => `• ${t.name}`).join('\n');
   });
 
   if(myChart) myChart.destroy();
@@ -194,30 +191,59 @@ function updateChart() {
         { 
           label: 'ວຽກຄ້າງ', 
           data: pendingData, 
-          backgroundColor: '#e63946', // ປ່ຽນເປັນສີແດງຕາມຕ້ອງການ
-          details: pendingDetails // ເກັບລາຍຊື່ວຽກໄວ້ບ່ອນນີ້
+          backgroundColor: '#ff4d4d', // ປ່ຽນເປັນສີແດງ
+          borderColor: '#d63031',
+          borderWidth: 1,
+          hoverBackgroundColor: '#ff7675',
+          details: pendingDetails // ເກັບລາຍຊື່ວຽກໄວ້
         },
         { 
           label: 'ວຽກສຳເລັດ', 
           data: doneData, 
-          backgroundColor: '#2d6a4f' 
+          backgroundColor: '#2d6a4f', // ສີຂຽວຄືເກົ່າ
+          borderColor: '#1b4332',
+          borderWidth: 1
         }
       ]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      scales: { x: {stacked: true}, y: {stacked: true} },
+      scales: { 
+        x: { stacked: true }, 
+        y: { 
+          stacked: true, 
+          beginAtZero: true, 
+          ticks: { stepSize: 1 } 
+        } 
+      },
       plugins: {
         tooltip: {
+          displayColors: false, // ປິດຮູບສີ່ຫຼ່ຽມສີໃນ Tooltip ເພື່ອໃຫ້ເບິ່ງງ່າຍ
           callbacks: {
-            // ເວລາເອົາ Cursor ໄປຊີ້ ໃຫ້ສະແດງລາຍຊື່ວຽກ
+            title: function(context) {
+              return 'ຜູ້ຮັບຜິດຊອບ: ' + context[0].label;
+            },
+            label: function(context) {
+              let label = context.dataset.label || '';
+              if (label) {
+                label += ': ' + context.parsed.y + ' ວຽກ';
+              }
+              return label;
+            },
+            // ສ່ວນສຳຄັນ: ສະແດງລາຍຊື່ວຽກຄ້າງ
             afterLabel: function(context) {
               if (context.dataset.label === 'ວຽກຄ້າງ') {
                 return '\nລາຍຊື່ວຽກທີ່ຄ້າງ:\n' + context.dataset.details[context.dataIndex];
               }
-              return '';
             }
+          },
+          bodyFont: {
+            family: 'Noto Sans Lao'
+          },
+          titleFont: {
+            family: 'Noto Sans Lao',
+            size: 14
           }
         }
       }
