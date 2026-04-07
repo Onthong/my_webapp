@@ -91,6 +91,14 @@
   <div class="toolbar">
     <div class="search-box"><input type="text" id="searchInput" oninput="render()" placeholder="🔍 ຄົ້ນຫາ..."/></div>
     <div id="statusFilters" style="display:flex; gap:6px;"></div>
+    <div class="date-filter" style="display:flex; align-items:center; gap:6px; background:#f0ede8; padding:5px 10px; border-radius:8px; border:1px solid var(--border);">
+    <span style="font-size:11px; color:#7a7670;">ເລີ່ມ:</span>
+    <input type="date" id="dateStart" onchange="render()" style="border:none; background:transparent; font-size:12px; outline:none; cursor:pointer;"/>
+    <span style="font-size:11px; color:#7a7670;">ຫາ:</span>
+    <input type="date" id="dateEnd" onchange="render()" style="border:none; background:transparent; font-size:12px; outline:none; cursor:pointer;"/>
+  </div>
+
+  <div id="statusFilters" style="display:flex; gap:6px;"></div>
   </div>
 
   <div style="overflow-x:auto;">
