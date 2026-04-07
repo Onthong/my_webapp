@@ -46,13 +46,13 @@ body{font-family:'Noto Sans Lao',sans-serif;background:var(--bg);color:var(--tex
 .stat-l{font-size:11px;color:var(--muted);margin-top:4px;}
 .stat-doing .stat-n{color:#7a4f0a;}
 .stat-done .stat-n{color:var(--accent);}
+.chart-container{padding:20px; background:var(--card); border:1px solid var(--border-lt); border-radius:var(--r-lg); margin-bottom:14px; height: 320px;}
 .prog-row{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
 .prog-bar{flex:1;height:4px;background:var(--border);border-radius:999px;overflow:hidden;}
 .prog-fill{height:100%;background:var(--accent);transition:width .4s ease;}
 .prog-lbl{font-size:12px;font-weight:500;color:var(--accent);font-family:var(--mono);min-width:34px;}
 .panel{background:var(--card);border:1px solid var(--border-lt);border-radius:var(--r-lg);overflow:hidden;margin-bottom:14px;}
 .panel-head{padding:11px 14px;border-bottom:1px solid var(--border-lt);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;}
-.chart-container{padding:20px; background:var(--card); border:1px solid var(--border-lt); border-radius:var(--r-lg); margin-bottom:14px; height: 300px;}
 .form-grid{display:grid;grid-template-columns:2fr 1.2fr 1fr 1fr 1fr auto;gap:8px;padding:12px 14px;align-items:end;}
 .fg{display:flex;flex-direction:column;gap:4px;}
 .fg label{font-size:11px;color:var(--muted);font-weight:500;}
@@ -126,8 +126,13 @@ td{padding:9px 12px;border-bottom:1px solid var(--border-lt);vertical-align:midd
   <div class="panel">
     <div class="panel-head"><b>ເພີ່ມວຽກໃໝ່</b></div>
     <div class="form-grid">
-      <div class="fg"><label>ຊື່ວຽກ *</label><input id="fName"/></div>
-      <div class="fg"><label>ຜູ້ຮັບຜິດຊອບ</label><input id="fAssign"/></div>
+      <div class="fg"><label>ຊື່ວຽກ *</label><input id="fName" placeholder="ລະບຸຊື່ວຽກ..."/></div>
+      <div class="fg">
+        <label>ຜູ້ຮັບຜິດຊອບ</label>
+        <select id="fAssign">
+          <option value="ບໍ່ລະບຸ">-- ໂຫຼດລາຍຊື່... --</option>
+        </select>
+      </div>
       <div class="fg"><label>ວັນທີມອບວຽກ</label><input id="fAssigned" type="date"/></div>
       <div class="fg"><label>ກຳນົດສຳເລັດ</label><input id="fDue" type="date"/></div>
       <div class="fg"><label>ຄວາມສຳຄັນ</label>
@@ -154,6 +159,7 @@ td{padding:9px 12px;border-bottom:1px solid var(--border-lt);vertical-align:midd
           <input type="date" id="dateStart" onchange="render()"/>
           <span style="font-size:11px; color:var(--muted);">ຫາ:</span>
           <input type="date" id="dateEnd" onchange="render()"/>
+          <button style="border:none; background:none; cursor:pointer; color:var(--accent); font-size:11px; margin-left:5px;" onclick="clearDateFilter()">ລ້າງ</button>
         </div>
 
         <div class="filter-group" id="statusFilters"></div>
@@ -186,6 +192,7 @@ td{padding:9px 12px;border-bottom:1px solid var(--border-lt);vertical-align:midd
 <script>
 let SCRIPT_URL = localStorage.getItem('gs_url') || '';
 let tasks = [];
+let users = [];
 let filterSt = 'all';
 let filterPrio = 'all';
 let nextId = 1;
@@ -203,6 +210,7 @@ function toggleCfg() { const p = document.getElementById('cfg-panel'); p.style.d
 function saveConfig() { SCRIPT_URL = document.getElementById('cfg-url').value; localStorage.setItem('gs_url', SCRIPT_URL); loadFromSheet(); }
 function setStatusFilter(f) { filterSt = f; render(); }
 function setPrioFilter(f) { filterPrio = f; render(); }
+function clearDateFilter() { document.getElementById('dateStart').value = ''; document.getElementById('dateEnd').value = ''; render(); }
 
 function setSync(state, msg) {
   const dot = document.getElementById('sync-dot');
@@ -216,18 +224,32 @@ async function loadFromSheet() {
   setSync('loading', 'ກຳລັງໂຫຼດ...');
   try {
     const res = await fetch(SCRIPT_URL + '?t=' + Date.now(), { redirect: 'follow' });
-    const json = await res.json();
-    tasks = json.map(r => ({
+    const data = await res.json();
+    
+    // ຈັດການຂໍ້ມູນວຽກ
+    tasks = data.tasks.map(r => ({
       id: Number(r.id), name: r.name, assignee: r.assignee || 'ບໍ່ລະບຸ',
       assigned: r.assigned ? r.assigned.split('T')[0] : '',
       due: r.due ? r.due.split('T')[0] : '',
       completed_at: r.completed_at ? r.completed_at.split('T')[0] : '',
       prio: r.prio, status: r.status || 'todo'
     })).filter(t => t.name);
+
+    // ຈັດການລາຍຊື່ຜູ້ຮັບຜິດຊອບ (Sheet2)
+    const userSelect = document.getElementById('fAssign');
+    userSelect.innerHTML = '<option value="ບໍ່ລະບຸ">-- ເລືອກຜູ້ຮັບຜິດຊອບ --</option>';
+    if(data.users && data.users.length > 0) {
+      data.users.forEach(u => {
+        const opt = document.createElement('option');
+        opt.value = u; opt.textContent = u;
+        userSelect.appendChild(opt);
+      });
+    }
+
     nextId = tasks.length ? Math.max(...tasks.map(t=>t.id)) + 1 : 1;
     setSync('ok', 'Sync ສຳເລັດ');
     render();
-  } catch(e) { setSync('err', 'ໂຫຼດຜິດພາດ'); }
+  } catch(e) { setSync('err', 'ໂຫຼດຜິດພາດ'); console.error(e); }
 }
 
 async function saveToSheet() {
@@ -240,32 +262,29 @@ async function saveToSheet() {
 
 function updateChart() {
   const ctx = document.getElementById('performanceChart').getContext('2d');
+  const allUsers = [...new Set(tasks.map(t => t.assignee))];
   
-  // ຈັດກຸ່ມຂໍ້ມູນຕາມຜູ້ຮັບຜິດຊອບ
-  const users = [...new Set(tasks.map(t => t.assignee))];
-  const doneData = users.map(u => tasks.filter(t => t.assignee === u && t.status === 'done').length);
-  const pendingData = users.map(u => tasks.filter(t => t.assignee === u && t.status !== 'done').length);
+  const doneData = allUsers.map(u => tasks.filter(t => t.assignee === u && t.status === 'done').length);
+  const pendingData = allUsers.map(u => tasks.filter(t => t.assignee === u && t.status !== 'done').length);
 
   if (myChart) myChart.destroy();
-
   myChart = new Chart(ctx, {
     type: 'bar',
     data: {
-      labels: users,
+      labels: allUsers,
       datasets: [
         { label: 'ວຽກຄ້າງ (Todo/Doing)', data: pendingData, backgroundColor: '#f5d08a' },
         { label: 'ວຽກສຳເລັດ', data: doneData, backgroundColor: '#2d6a4f' }
       ]
     },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
+      responsive: true, maintainAspectRatio: false,
       plugins: {
-        title: { display: true, text: 'ສະຖິຕິການເຮັດວຽກລາຍບຸກຄົນ', font: {family: 'Noto Sans Lao', size: 14} },
-        legend: { labels: { font: {family: 'Noto Sans Lao'} } }
+        title: { display: true, text: 'ວິເຄາະຜົນງານລາຍບຸກຄົນ (ວຽກຄ້າງສູງ = ເຮັດວຽກຊ້າ)', font: {family:'Noto Sans Lao', size:14} },
+        legend: { labels: { font: {family:'Noto Sans Lao'} } }
       },
       scales: {
-        x: { stacked: true, ticks: {font: {family: 'Noto Sans Lao'}} },
+        x: { stacked: true, ticks: {font:{family:'Noto Sans Lao'}} },
         y: { stacked: true, beginAtZero: true }
       }
     }
@@ -316,63 +335,4 @@ function render() {
 
   document.getElementById('tbody').innerHTML = vis.map((t, i) => {
     return `<tr>
-      <td>${i+1}</td>
-      <td><b>${t.name}</b></td>
-      <td>${t.assignee || '—'}</td>
-      <td class="td-due">${fmtDate(t.assigned)}</td>
-      <td class="td-due">${fmtDate(t.due)}</td>
-      <td class="td-due" style="color:var(--accent)">${fmtDate(t.completed_at)}</td>
-      <td><span class="badge ${PRIO_CLS[t.prio]}">${PRIO_LABEL[t.prio]}</span></td>
-      <td><span class="badge ${ST_CLS[t.status]}">${ST_LABEL[t.status]}</span></td>
-      <td style="display:flex; gap:4px;">
-        <button class="btn btn-sm ${MV_CLS[t.status]}" onclick="moveTask(${t.id})">${MV_LBL[t.status]}</button>
-        <button class="btn btn-sm btn-danger" onclick="delTask(${t.id})">ລຶບ</button>
-      </td>
-    </tr>`;
-  }).join('');
-}
-
-async function addTask() {
-  const name = document.getElementById('fName').value;
-  const assignee = document.getElementById('fAssign').value || 'ບໍ່ລະບຸ';
-  if(!name) return toast('ກະລຸນາໃສ່ຊື່ວຽກ');
-  tasks.push({
-    id: nextId++, name, assignee,
-    assigned: document.getElementById('fAssigned').value,
-    due: document.getElementById('fDue').value,
-    completed_at: '',
-    prio: document.getElementById('fPrio').value,
-    status: 'todo'
-  });
-  ['fName','fAssign','fAssigned','fDue'].forEach(id => document.getElementById(id).value = '');
-  render();
-  await saveToSheet();
-}
-
-async function moveTask(id) {
-  const t = tasks.find(x => x.id === id);
-  const nextSt = ST_NEXT[t.status];
-  t.status = nextSt;
-  if (nextSt === 'done') t.completed_at = new Date().toISOString().split('T')[0];
-  else if (nextSt === 'todo') t.completed_at = '';
-  render();
-  await saveToSheet();
-}
-
-async function delTask(id) {
-  if(!confirm('ຢືນຢັນການລຶບ?')) return;
-  tasks = tasks.filter(x => x.id !== id);
-  render();
-  await saveToSheet();
-}
-
-function toast(msg) {
-  const el = document.getElementById('toast');
-  el.textContent = msg; el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), 3000);
-}
-
-if(SCRIPT_URL) loadFromSheet(); else toggleCfg();
-</script>
-</body>
-</html>
+      <td>${i+1
