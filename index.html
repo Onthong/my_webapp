@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="lo">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>ກະດານຕິດຕາມວຽກ — R&D Center</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#f0ede8;--surface:#faf9f6;--card:#fff;
+  --border:#dedad3;--border-lt:#eceae4;
+  --text:#1c1a17;--muted:#7a7670;--hint:#b0ada6;
+  --accent:#2d6a4f;--accent-lt:#e8f5ee;--accent-bd:#95d5b2;
+  --mono:'DM Mono',monospace;--r:10px;--r-lg:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Noto Sans Lao',sans-serif;background:var(--bg);color:var(--text);font-size:14px;min-height:100vh;}
+.header{background:var(--card);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:58px;gap:10px;position:sticky;top:0;z-index:100;}
+.logo{display:flex;align-items:center;gap:10px;}
+.logo-mark{width:30px;height:30px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.logo-text{font-size:15px;font-weight:600;letter-spacing:-0.02em;}
+.logo-sub{font-size:11px;color:var(--muted);}
+.header-right{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.sync-bar{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);padding:5px 24px;background:var(--surface);border-bottom:1px solid var(--border-lt);}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--hint);flex-shrink:0;transition:background .3s;}
+.sync-dot.ok{background:#3b6d11;}
+.sync-dot.loading{background:#854f0b;animation:blink 1s infinite;}
+.sync-dot.err{background:#9b2323;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+.sync-time{margin-left:auto;font-size:11px;color:var(--hint);font-family:var(--mono);}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border:1px solid var(--border);border-radius:var(--r);background:var(--card);color:var(--text);font-size:13px;font-family:inherit;cursor:pointer;transition:background .12s,border-color .12s,transform .1s;white-space:nowrap;line-height:1;}
+.btn:hover{background:var(--surface);border-color:#c0bdb5;}
+.btn-accent{background:var(--accent);border-color:var(--accent);color:#fff;}
+.btn-go{background:var(--accent-lt);border-color:var(--accent-bd);color:var(--accent);}
+.btn-sm{padding:4px 9px;font-size:12px;}
+.btn-danger{background:#fff5f5;border-color:#fbc8c8;color:#9b2323;}
+.main{max-width:1200px;margin:0 auto;padding:20px 16px 60px;}
+.cfg-panel{background:#fffbea;border:1px solid #f5d08a;border-radius:var(--r-lg);padding:14px 16px;margin-bottom:14px;}
+.cfg-input{flex:1;min-width:220px;padding:8px 11px;border:1px solid #f5d08a;border-radius:var(--r);font-size:12px;font-family:var(--mono);background:#fff;outline:none;}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:14px;}
+.stat-card{background:var(--card);border:1px solid var(--border-lt);border-radius:var(--r-lg);padding:14px 16px;}
+.stat-n{font-size:26px;font-weight:600;font-family:var(--mono);line-height:1;}
+.stat-l{font-size:11px;color:var(--muted);margin-top:4px;}
+.stat-doing .stat-n{color:#7a4f0a;}
+.stat-done .stat-n{color:var(--accent);}
+.prog-row{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.prog-bar{flex:1;height:4px;background:var(--border);border-radius:999px;overflow:hidden;}
+.prog-fill{height:100%;background:var(--accent);transition:width .4s ease;}
+.prog-lbl{font-size:12px;font-weight:500;color:var(--accent);font-family:var(--mono);min-width:34px;}
+.panel{background:var(--card);border:1px solid var(--border-lt);border-radius:var(--r-lg);overflow:hidden;margin-bottom:14px;}
+.panel-head{padding:11px 14px;border-bottom:1px solid var(--border-lt);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;}
+.form-grid{display:grid;grid-template-columns:2fr 1.2fr 1fr 1fr 1fr auto;gap:8px;padding:12px 14px;align-items:end;}
+.fg{display:flex;flex-direction:column;gap:4px;}
+.fg label{font-size:11px;color:var(--muted);font-weight:500;}
+.fg input,.fg select{padding:7px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:13px;background:var(--surface);outline:none;height:36px;}
+.toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;width:100%;}
+.search-box{position:relative;flex:1.5;min-width:200px;}
+.search-box input{width:100%;padding:7px 10px 7px 32px;border:1px solid var(--border);border-radius:var(--r);font-size:13px;outline:none;background:var(--surface);}
+.search-box svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--hint);}
+.date-filter{display:flex;align-items:center;gap:6px;background:var(--surface);padding:4px 10px;border:1px solid var(--border);border-radius:var(--r);}
+.date-filter input{border:none;background:transparent;font-size:12px;font-family:var(--mono);outline:none;cursor:pointer;}
+.filter-group{display:flex;align-items:center;gap:6px;}
+.fp{padding:4px 11px;border:1px solid var(--border);border-radius:999px;font-size:12px;cursor:pointer;background:transparent;color:var(--muted);transition:0.12s;display:inline-flex;align-items:center;gap:4px;}
+.fp.on{background:var(--text);color:#fff;border-color:var(--text);}
+.cb{font-size:10px;font-family:var(--mono);background:var(--border);color:var(--muted);padding:1px 5px;border-radius:999px;}
+.fp.on .cb{background:rgba(255,255,255,.2);color:#fff;}
+.tbl-scroll{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;}
+th{text-align:left;padding:8px 12px;font-size:10px;color:var(--hint);letter-spacing:.08em;text-transform:uppercase;border-bottom:1px solid var(--border-lt);}
+td{padding:9px 12px;border-bottom:1px solid var(--border-lt);vertical-align:middle;}
+.td-due{font-family:var(--mono);font-size:12px;white-space:nowrap;}
+.badge{display:inline-block;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:500;border:1px solid transparent;}
+.b-todo{background:#eef4fb;color:#1a4d8f;border-color:#b8d4f5;}
+.b-doing{background:#fef5e7;color:#7a4f0a;border-color:#f5d08a;}
+.b-done{background:var(--accent-lt);color:var(--accent);border-color:var(--accent-bd);}
+.p-h{background:#fff0f0;color:#9b2323;border-color:#f5b8b8;}
+.p-m{background:#fef5e7;color:#7a4f0a;border-color:#f5d08a;}
+.p-l{background:#eef4fb;color:#1a4d8f;border-color:#b8d4f5;}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(70px);background:#1c1a17;color:#fff;padding:9px 18px;border-radius:var(--r);font-size:13px;z-index:999;transition:0.3s;opacity:0;}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo">
+    <div class="logo-mark"><svg width="16" height="16" fill="none"><rect x="2" y="3" width="6" height="1.5" rx=".75" fill="#fff"/><circle cx="13" cy="11.5" r="2" fill="#95d5b2"/></svg></div>
+    <div><div class="logo-text">ກະດານຕິດຕາມວຽກ</div><div class="logo-sub">ສູນວິໄຈ ແລະ ພັດທະນາເຕັກໂນໂລຊີ-ນະວັດຕະກຳ</div></div>
+  </div>
+  <div class="header-right">
+    <button class="btn" id="btn-refresh" onclick="loadFromSheet()">ໂຫຼດໃໝ່</button>
+    <button class="btn btn-icon" onclick="toggleCfg()">⚙️</button>
+  </div>
+</header>
+
+<div class="sync-bar">
+  <div class="sync-dot" id="sync-dot"></div>
+  <span id="sync-text">ລໍຖ້າການເຊື່ອມຕໍ່...</span>
+  <span class="sync-time" id="sync-time"></span>
+</div>
+
+<main class="main">
+  <div class="cfg-panel" id="cfg-panel" style="display:none;">
+    <div style="display:flex; gap:8px;">
+      <input class="cfg-input" id="cfg-url" type="text" placeholder="ໃສ່ Google Script URL..."/>
+      <button class="btn btn-accent" onclick="saveConfig()">ເຊື່ອມຕໍ່</button>
+    </div>
+  </div>
+
+  <div class="stats" id="stats-grid"></div>
+  <div class="prog-row">
+    <span style="font-size:11px;color:var(--muted);">ຄວາມຄືບໜ້າ</span>
+    <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+    <span class="prog-lbl" id="prog-pct">0%</span>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><b>ເພີ່ມວຽກໃໝ່</b></div>
+    <div class="form-grid">
+      <div class="fg"><label>ຊື່ວຽກ *</label><input id="fName"/></div>
+      <div class="fg"><label>ຜູ້ຮັບຜິດຊອບ</label><input id="fAssign"/></div>
+      <div class="fg"><label>ວັນທີມອບວຽກ</label><input id="fAssigned" type="date"/></div>
+      <div class="fg"><label>ກຳນົດສຳເລັດ</label><input id="fDue" type="date"/></div>
+      <div class="fg"><label>ຄວາມສຳຄັນ</label>
+        <select id="fPrio">
+          <option value="h">ຮີບດ່ວນ</option>
+          <option value="m" selected>ປານກາງ</option>
+          <option value="l">ຕໍ່າ</option>
+        </select>
+      </div>
+      <button class="btn btn-accent" onclick="addTask()">+ ເພີ່ມ</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <div class="toolbar">
+        <div class="search-box">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <input type="text" id="searchInput" oninput="render()" placeholder="ຄົ້ນຫາຊື່ວຽກ ຫຼື ຜູ້ຮັບຜິດຊອບ..."/>
+        </div>
+        
+        <div class="date-filter">
+          <span style="font-size:11px; color:var(--muted);">ເລີ່ມ:</span>
+          <input type="date" id="dateStart" onchange="render()"/>
+          <span style="font-size:11px; color:var(--muted);">ຫາ:</span>
+          <input type="date" id="dateEnd" onchange="render()"/>
+          <button style="border:none; background:none; cursor:pointer; color:var(--accent); font-size:11px;" onclick="clearDateFilter()">ລ້າງ</button>
+        </div>
+
+        <div class="filter-group" id="statusFilters"></div>
+        <div class="filter-group" id="prioFilters"></div>
+      </div>
+    </div>
+    <div class="tbl-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>ຊື່ວຽກ</th>
+            <th>ຜູ້ຮັບຜິດຊອບ</th>
+            <th>ວັນທີມອບ</th>
+            <th>ກຳນົດສຳເລັດ</th>
+            <th>ວັນທີສຳເລັດແທ້</th>
+            <th>ຄວາມສຳຄັນ</th>
+            <th>ສະຖານະ</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let SCRIPT_URL = localStorage.getItem('gs_url') || '';
+let tasks = [];
+let filterSt = 'all';
+let filterPrio = 'all';
+let nextId = 1;
+
+const ST_NEXT  = {todo:'doing', doing:'done', done:'todo'};
+const ST_LABEL = {todo:'ລໍຖ້າ', doing:'ດຳເນີນຢູ່', done:'ສຳເລັດ'};
+const ST_CLS   = {todo:'b-todo', doing:'b-doing', done:'b-done'};
+const MV_LBL   = {todo:'▶ ເລີ່ມ', doing:'✓ ສຳເລັດ', done:'↺ ຣີເຊັດ'};
+const MV_CLS   = {todo:'btn-go', doing:'btn-accent', done:''};
+const PRIO_LABEL = {h:'ຮີບດ່ວນ', m:'ປານກາງ', l:'ຕໍ່າ'};
+const PRIO_CLS   = {h:'p-h', m:'p-m', l:'p-l'};
+
+function toggleCfg() { const p = document.getElementById('cfg-panel'); p.style.display = p.style.display==='none'?'block':'none'; }
+function saveConfig() { SCRIPT_URL = document.getElementById('cfg-url').value; localStorage.setItem('gs_url', SCRIPT_URL); loadFromSheet(); }
+
+function setStatusFilter(f) { filterSt = f; render(); }
+function setPrioFilter(f) { filterPrio = f; render(); }
+function clearDateFilter() { document.getElementById('dateStart').value = ''; document.getElementById('dateEnd').value = ''; render(); }
+
+function setSync(state, msg) {
+  const dot = document.getElementById('sync-dot');
+  dot.className = 'sync-dot ' + state;
+  document.getElementById('sync-text').textContent = msg;
+  if(state==='ok') document.getElementById('sync-time').textContent = 'ອັບເດດ ' + new Date().toLocaleTimeString('lo-LA');
+}
+
+async function loadFromSheet() {
+  if(!SCRIPT_URL) return;
+  setSync('loading', 'ກຳລັງໂຫຼດ...');
+  try {
+    const res = await fetch(SCRIPT_URL + '?t=' + Date.now(), { redirect: 'follow' });
+    const json = await res.json();
+    tasks = json.map(r => ({
+      id: Number(r.id), name: r.name, assignee: r.assignee,
+      assigned: r.assigned ? r.assigned.split('T')[0] : '',
+      due: r.due ? r.due.split('T')[0] : '',
+      completed_at: r.completed_at ? r.completed_at.split('T')[0] : '',
+      prio: r.prio, status: r.status || 'todo'
+    })).filter(t => t.name);
+    nextId = tasks.length ? Math.max(...tasks.map(t=>t.id)) + 1 : 1;
+    setSync('ok', 'Sync ສຳເລັດ');
+    render();
+  } catch(e) { setSync('err', 'ໂຫຼດຜິດພາດ'); }
+}
+
+async function saveToSheet() {
+  setSync('loading', 'ກຳລັງບັນທຶກ...');
+  try {
+    await fetch(SCRIPT_URL, { method: 'POST', redirect: 'follow', body: JSON.stringify(tasks) });
+    setSync('ok', 'ບັນທຶກແລ້ວ');
+  } catch(e) { setSync('err', 'ບັນທຶກຜິດພາດ'); }
+}
+
+function fmtDate(d) {
+  if(!d || d === '—') return '—';
+  return new Date(d).toLocaleDateString('lo-LA', {day:'2-digit', month:'2-digit', year:'numeric'});
+}
+
+function render() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const ds = document.getElementById('dateStart').value;
+  const de = document.getElementById('dateEnd').value;
+  
+  const tot = tasks.length;
+  const dn = tasks.filter(t => t.status === 'done').length;
+  const pct = tot ? Math.round(dn/tot*100) : 0;
+  
+  document.getElementById('stats-grid').innerHTML = `
+    <div class="stat-card"><div class="stat-n">${tot}</div><div class="stat-l">ວຽກທັງໝົດ</div></div>
+    <div class="stat-card stat-doing"><div class="stat-n">${tasks.filter(t=>t.status==='doing').length}</div><div class="stat-l">ດຳເນີນຢູ່</div></div>
+    <div class="stat-card stat-done"><div class="stat-n">${dn}</div><div class="stat-l">ສຳເລັດ</div></div>
+  `;
+  document.getElementById('prog-fill').style.width = pct+'%';
+  document.getElementById('prog-pct').textContent = pct+'%';
+
+  // Render Status & Prio Filters
+  const stPills = [['all','ທັງໝົດ',tot], ['todo','ລໍຖ້າ',tasks.filter(t=>t.status==='todo').length], ['doing','ດຳເນີນ',tasks.filter(t=>t.status==='doing').length], ['done','ສຳເລັດ',dn]];
+  document.getElementById('statusFilters').innerHTML = stPills.map(([f,l,c]) => 
+    `<button class="fp${filterSt===f?' on':''}" onclick="setStatusFilter('${f}')">${l}<span class="cb">${c}</span></button>`).join('');
+
+  const prioPills = [['all','ທັງໝົດ'], ['h','ຮີບດ່ວນ'], ['m','ປານກາງ'], ['l','ຕໍ່າ']];
+  document.getElementById('prioFilters').innerHTML = prioPills.map(([f,l]) => {
+    const count = f === 'all' ? tasks.length : tasks.filter(t => t.prio === f).length;
+    return `<button class="fp${filterPrio===f?' on':''}" onclick="setPrioFilter('${f}')">${l}<span class="cb">${count}</span></button>`;
+  }).join('');
+
+  // ⚠️ Logic Filter ວັນທີ
+  const vis = tasks.filter(t => {
+    const matchSearch = t.name.toLowerCase().includes(q) || t.assignee.toLowerCase().includes(q);
+    const matchStatus = filterSt === 'all' || t.status === filterSt;
+    const matchPrio = filterPrio === 'all' || t.prio === filterPrio;
+    
+    // ກວດສອບຊ່ວງວັນທີ (ອີງຕາມວັນທີມອບວຽກ assigned)
+    let matchDate = true;
+    if (ds && de) {
+      matchDate = t.assigned >= ds && t.assigned <= de;
+    } else if (ds) {
+      matchDate = t.assigned >= ds;
+    } else if (de) {
+      matchDate = t.assigned <= de;
+    }
+    
+    return matchSearch && matchStatus && matchPrio && matchDate;
+  });
+
+  document.getElementById('tbody').innerHTML = vis.map((t, i) => {
+    return `<tr>
+      <td>${i+1}</td>
+      <td><b>${t.name}</b></td>
+      <td>${t.assignee || '—'}</td>
+      <td class="td-due">${fmtDate(t.assigned)}</td>
+      <td class="td-due">${fmtDate(t.due)}</td>
+      <td class="td-due" style="color:var(--accent)">${fmtDate(t.completed_at)}</td>
+      <td><span class="badge ${PRIO_CLS[t.prio]}">${PRIO_LABEL[t.prio]}</span></td>
+      <td><span class="badge ${ST_CLS[t.status]}">${ST_LABEL[t.status]}</span></td>
+      <td style="display:flex; gap:4px;">
+        <button class="btn btn-sm ${MV_CLS[t.status]}" onclick="moveTask(${t.id})">${MV_LBL[t.status]}</button>
+        <button class="btn btn-sm btn-danger" onclick="delTask(${t.id})">ລຶບ</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function addTask() {
+  const name = document.getElementById('fName').value;
+  if(!name) return toast('ກະລຸນາໃສ່ຊື່ວຽກ');
+  tasks.push({
+    id: nextId++, name,
+    assignee: document.getElementById('fAssign').value,
+    assigned: document.getElementById('fAssigned').value,
+    due: document.getElementById('fDue').value,
+    completed_at: '',
+    prio: document.getElementById('fPrio').value,
+    status: 'todo'
+  });
+  ['fName','fAssign','fAssigned','fDue'].forEach(id => document.getElementById(id).value = '');
+  render();
+  await saveToSheet();
+}
+
+async function moveTask(id) {
+  const t = tasks.find(x => x.id === id);
+  const nextSt = ST_NEXT[t.status];
+  t.status = nextSt;
+  if (nextSt === 'done') t.completed_at = new Date().toISOString().split('T')[0];
+  else if (nextSt === 'todo') t.completed_at = '';
+  render();
+  await saveToSheet();
+}
+
+async function delTask(id) {
+  if(!confirm('ຢືນຢັນການລຶບ?')) return;
+  tasks = tasks.filter(x => x.id !== id);
+  render();
+  await saveToSheet();
+}
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+if(SCRIPT_URL) loadFromSheet(); else toggleCfg();
+</script>
+</body>
+</html>
