@@ -186,6 +186,10 @@ function render() {
   updateChart();
   const q = document.getElementById('searchInput').value.toLowerCase();
   
+  // ດຶງຄ່າຈາກຊ່ອງວັນທີ ເລີ່ມ - ຫາ
+  const ds = document.getElementById('dateStart').value;
+  const de = document.getElementById('dateEnd').value;
+  
   // Stats & Progress
   const tot = tasks.length, dn = tasks.filter(t => t.status === 'done').length;
   const pct = tot ? Math.round((dn / tot) * 100) : 0;
@@ -196,13 +200,30 @@ function render() {
   document.getElementById('prog-fill').style.width = pct + '%';
   document.getElementById('prog-pct').textContent = pct + '%';
 
-  // Filters UI
-  const stFilters = [['all','ທັງໝົດ'], ['todo','ລໍຖ້າ'], ['doing','ດຳເນີນ'], ['done','ສຳເລັດ']];
-  document.getElementById('statusFilters').innerHTML = stFilters.map(([f,l]) => 
-    `<button class="fp${filterSt===f?' on':''}" onclick="filterSt='${f}';render()">${l}</button>`).join('');
+  // Filters UI (Tabs) ພ້ອມຕົວເລກ Counter
+  const stFilters = [
+    ['all','ທັງໝົດ', tot], 
+    ['todo','ລໍຖ້າ', tasks.filter(t=>t.status==='todo').length], 
+    ['doing','ດຳເນີນ', tasks.filter(t=>t.status==='doing').length], 
+    ['done','ສຳເລັດ', dn]
+  ];
+  document.getElementById('statusFilters').innerHTML = stFilters.map(([f,l,c]) => 
+    `<button class="fp${filterSt===f?' on':''}" onclick="filterSt='${f}';render()" style="display:inline-flex; align-items:center; gap:5px; padding:5px 12px; border:1px solid var(--border); border-radius:999px; font-size:11px; cursor:pointer; background:var(--card);">
+      ${l} <span style="font-size:10px; opacity:0.6;">${c}</span>
+    </button>`).join('');
 
+  // ສະແດງຂໍ້ມູນໃນຕາຕະລາງ ພ້ອມການກອງ (Filter) ທັງ Search, ສະຖານະ ແລະ ວັນທີ
   document.getElementById('tbody').innerHTML = tasks
-    .filter(t => (filterSt === 'all' || t.status === filterSt) && (t.name.toLowerCase().includes(q) || t.assignee.toLowerCase().includes(q)))
+    .filter(t => {
+      const matchSearch = t.name.toLowerCase().includes(q) || t.assignee.toLowerCase().includes(q);
+      const matchStatus = filterSt === 'all' || t.status === filterSt;
+      
+      // Logic ການກອງວັນທີ
+      let matchDate = true;
+      if (ds && de) matchDate = t.assigned >= ds && t.assigned <= de;
+      
+      return matchSearch && matchStatus && matchDate;
+    })
     .map((t, i) => `
     <tr>
       <td>${i+1}</td>
