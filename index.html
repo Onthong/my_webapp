@@ -222,6 +222,7 @@ async function moveTask(id) {
 }
 
 async function addTask() {
+  // ປະກາດຕົວແປເພື່ອອ້າງອີງຫາຊ່ອງ Input ຕ່າງໆ
   const nameEl = document.getElementById('fName');
   const assignEl = document.getElementById('fAssign');
   const assignedEl = document.getElementById('fAssigned');
@@ -231,10 +232,10 @@ async function addTask() {
   const name = nameEl.value.trim();
   if(!name) return showToast("ໃສ່ຊື່ວຽກກ່ອນ!");
 
-  // ເພີ່ມຂໍ້ມູນເຂົ້າໃນ Array tasks
+  // ເພີ່ມຂໍ້ມູນເຂົ້າໃນລະບົບ
   tasks.push({ 
     id: Date.now(), 
-    name, 
+    name: name, 
     assignee: assignEl.value, 
     assigned: assignedEl.value, 
     due: dueEl.value, 
@@ -243,13 +244,13 @@ async function addTask() {
     status: 'todo' 
   });
 
-  // ສະແດງຜົນ ແລະ ບັນທຶກລົງ Sheet
+  // ສະແດງຜົນ ແລະ ບັນທຶກລົງ Google Sheet
   render(); 
   await saveToSheet(); 
 
-  // --- ສ່ວນທີ່ເພີ່ມໃໝ່: ລ້າງຂໍ້ມູນໃນຊ່ອງປ້ອນອອກໃຫ້ໝົດ ---
+  // --- ສ່ວນສຳຄັນ: ລ້າງຂໍ້ມູນໃນຊ່ອງປ້ອນອອກທັງໝົດ ---
   nameEl.value = '';        // ລ້າງຊື່ວຽກ
-  assignEl.value = 'ບໍ່ລະບຸ'; // Reset ຜູ້ຮັບຜິດຊອບເປັນຄ່າເລີ່ມຕົ້ນ
+  assignEl.value = 'ບໍ່ລະບຸ'; // Reset ຜູ້ຮັບຜິດຊອບ
   assignedEl.value = '';    // ລ້າງວັນທີມອບ
   dueEl.value = '';         // ລ້າງວັນທີກຳນົດ
   prioEl.value = 'm';       // Reset ຄວາມສຳຄັນເປັນ "ປານກາງ"
