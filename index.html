@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Task Tracker R&D — Master Version</title>
+<title>Task Tracker R&D — Professional Version</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
-  :root{ --bg:#f0ede8; --surface:#faf9f6; --card:#fff; --border:#dedad3; --accent:#2d6a4f; --accent-lt:#e8f5ee; --r:10px; --danger:#ff4d4d; }
+  :root{ --bg:#f0ede8; --surface:#faf9f6; --card:#fff; --border:#dedad3; --accent:#2d6a4f; --accent-lt:#e8f5ee; --r:12px; --danger:#ff4d4d; }
   *{box-sizing:border-box; margin:0; padding:0;}
-  body{font-family:'Noto Sans Lao',sans-serif; background:var(--bg); color:#1c1a17; font-size:13px;}
+  body{font-family:'Noto Sans Lao',sans-serif; background:var(--bg); color:#1c1a17; font-size:13px; line-height: 1.5;}
   
   /* Login Screen */
   #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f0ede8; z-index: 2000; display: flex; align-items: center; justify-content: center; }
@@ -19,55 +19,66 @@
   .btn-login { width: 100%; padding: 12px; background: var(--accent); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; }
 
   /* Layout */
-  .header{background:var(--card); border-bottom:1px solid var(--border); padding:10px 24px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100;}
-  .sync-bar{display:flex; padding:5px 24px; background:var(--surface); border-bottom:1px solid var(--border); font-size:11px; color:#7a7670;}
+  .header{background:var(--card); border-bottom:1px solid var(--border); padding:12px 24px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100;}
+  .sync-bar{display:flex; padding:6px 24px; background:var(--surface); border-bottom:1px solid var(--border); font-size:11px; color:#7a7670;}
   .sync-dot{width:8px; height:8px; border-radius:50%; margin-right:6px; background:#ccc;}
   .sync-dot.ok{background:#3b6d11;}
   .sync-dot.loading{background:#854f0b; animation:blink 1s infinite;}
   @keyframes blink{50%{opacity:0.3;}}
   
-  .main{max-width:1200px; margin:0 auto; padding:20px;}
-  .stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:10px; margin-bottom:15px;}
-  .stat-card{background:var(--card); border-radius:var(--r); padding:15px; border:1px solid var(--border); text-align:center;}
-  .chart-container{background:var(--card); border-radius:var(--r); padding:20px; border:1px solid var(--border); margin-bottom:15px; height:320px;}
+  .main{max-width:1300px; margin:0 auto; padding:20px;}
+  .stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px; margin-bottom:15px;}
+  .stat-card{background:var(--card); border-radius:var(--r); padding:18px; border:1px solid var(--border); text-align:center; box-shadow: 0 2px 4px rgba(0,0,0,0.02);}
+  .stat-card b { font-size: 18px; display: block; margin-bottom: 4px; }
   
-  .prog-row{display:flex; align-items:center; gap:10px; margin-bottom:15px;}
-  .prog-bar{flex:1; height:6px; background:#ddd; border-radius:10px; overflow:hidden;}
+  .chart-container{background:var(--card); border-radius:var(--r); padding:20px; border:1px solid var(--border); margin-bottom:15px; height:340px;}
+  
+  .prog-row{display:flex; align-items:center; gap:10px; margin-bottom:20px;}
+  .prog-bar{flex:1; height:8px; background:#ddd; border-radius:10px; overflow:hidden;}
   .prog-fill{height:100%; background:var(--accent); transition:0.4s;}
 
   /* Forms & Toolbar */
-  .form-grid{display:none; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:10px; background:var(--card); padding:15px; border-radius:var(--r); border:1px solid var(--border); margin-bottom:15px; align-items:end;}
-  .fg{display:flex; flex-direction:column; gap:4px;}
-  .fg label{font-size:11px; font-weight:600; color:#7a7670;}
-  .fg input, .fg select{padding:8px; border:1px solid var(--border); border-radius:8px; outline:none; height:36px;}
+  .form-grid{display:none; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; background:var(--card); padding:20px; border-radius:var(--r); border:1px solid var(--border); margin-bottom:20px; align-items:end; box-shadow: 0 2px 6px rgba(0,0,0,0.02);}
+  .fg{display:flex; flex-direction:column; gap:6px;}
+  .fg label{font-size:11px; font-weight:700; color:#5a5a5a;}
+  .fg input, .fg select{padding:8px 12px; border:1px solid var(--border); border-radius:8px; outline:none; height:38px; font-family: inherit;}
 
-  .toolbar{display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:15px; background:var(--card); padding:12px; border-radius:var(--r); border:1px solid var(--border);}
-  .search-box input{padding:8px 12px; border:1px solid var(--border); border-radius:8px; width:200px; outline:none;}
-  .date-filter{display:flex; align-items:center; gap:6px; background:#f0ede8; padding:5px 10px; border-radius:8px; border:1px solid var(--border);}
-  .date-filter input{border:none; background:transparent; font-size:12px; outline:none; cursor:pointer;}
+  .toolbar{display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:15px; background:var(--card); padding:14px; border-radius:var(--r); border:1px solid var(--border);}
+  .search-box input{padding:8px 14px; border:1px solid var(--border); border-radius:8px; width:240px; outline:none; background: #f9f9f9;}
+  .date-filter{display:flex; align-items:center; gap:8px; background:#f0ede8; padding:6px 12px; border-radius:8px; border:1px solid var(--border);}
+  .date-filter input{border:none; background:transparent; font-size:12px; outline:none; cursor:pointer; font-family: inherit;}
 
   /* Tabs */
-  .fp{padding:6px 14px; border:1px solid var(--border); border-radius:999px; font-size:12px; cursor:pointer; background:var(--card); display:inline-flex; align-items:center; gap:6px; transition:0.2s;}
+  .fp{padding:7px 16px; border:1px solid var(--border); border-radius:999px; font-size:12px; cursor:pointer; background:var(--card); display:inline-flex; align-items:center; gap:8px; transition:0.2s; font-weight: 500;}
   .fp.on{background:#1c1a17; color:#fff; border-color:#1c1a17;}
-  .cb{font-size:10px; background:#eee; color:#666; padding:1px 6px; border-radius:10px; font-weight:bold;}
+  .cb{font-size:10px; background:#eee; color:#666; padding:1px 7px; border-radius:10px; font-weight:bold;}
   .fp.on .cb{background:rgba(255,255,255,0.2); color:#fff;}
 
   /* Buttons */
-  .btn{padding:7px 12px; border-radius:8px; border:1px solid var(--border); cursor:pointer; font-size:12px; display:inline-flex; align-items:center; gap:4px; transition: 0.1s;}
+  .btn{padding:8px 14px; border-radius:8px; border:1px solid var(--border); cursor:pointer; font-size:12px; display:inline-flex; align-items:center; gap:6px; transition: 0.1s; font-weight: 600;}
   .btn-accent{background:var(--accent); color:white; border:none;}
   .btn-go{background:var(--accent-lt); color:var(--accent); border-color:#95d5b2;}
-  .btn-wa{background:#25D366; color:white; border:none;}
+  .btn-wa{background:#25D366 !important; color:white !important; border:none;}
   .btn-danger{background:#fff5f5; color:#9b2323; border-color:#fbc8c8;}
   .btn:active{transform: scale(0.96);}
 
-  /* Table */
-  table{width:100%; border-collapse:collapse; background:var(--card); border-radius:var(--r); overflow:hidden;}
-  th{background:var(--surface); padding:12px; text-align:left; font-size:11px; color:#7a7670; border-bottom:1px solid var(--border);}
-  td{padding:12px; border-bottom:1px solid var(--border); vertical-align:middle;}
-  .badge{padding:3px 8px; border-radius:999px; font-size:10px; font-weight:600;}
-  .b-todo{background:#eef4fb; color:#1a4d8f;}
-  .b-doing{background:#fef5e7; color:#7a4f0a;}
-  .b-done{background:var(--accent-lt); color:var(--accent);}
+  /* Modern Table Style */
+  .table-wrapper { overflow-x: auto; background: var(--card); border-radius: var(--r); border: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
+  table{width:100%; border-collapse:separate; border-spacing: 0;}
+  th{background:#f8f9fa; padding:15px 12px; text-align:left; font-size:11px; font-weight:700; color:#5a5a5a; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid var(--border);}
+  td{padding:15px 12px; border-bottom:1px solid #f0ede8; vertical-align:middle; font-size: 13px; color: #333;}
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background-color: #fcfbf9; }
+
+  .badge{padding:4px 10px; border-radius:6px; font-size:10px; font-weight:700; display: inline-flex; align-items: center; gap:4px;}
+  .b-todo{background:#eef4fb; color:#1a4d8f; border: 1px solid #d0e1f5;}
+  .b-doing{background:#fef5e7; color:#7a4f0a; border: 1px solid #fae7cb;}
+  .b-done{background:var(--accent-lt); color:var(--accent); border: 1px solid #c9e6d5;}
+  
+  .p-high { background: #fff0f0; color: #d63031; }
+  .p-mid { background: #fef5e7; color: #7a4f0a; }
+  .p-low { background: #eef4fb; color: #1a4d8f; }
+
   .toast{position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#000; color:#fff; padding:10px 20px; border-radius:10px; opacity:0; transition:0.3s; z-index:1000;}
   .toast.show{opacity:1;}
 </style>
@@ -89,8 +100,8 @@
 <header class="header">
   <div style="display:flex; align-items:center; gap:10px;">
     <span style="font-size:24px;">📝</span>
-    <b>ກະດານຕິດຕາມວຽກ R&D</b>
-    <span id="user-tag" style="font-size: 10px; background: #eee; padding: 2px 8px; border-radius: 4px; margin-left: 5px; font-weight: 600;"></span>
+    <b style="font-size: 16px;">ກະດານຕິດຕາມວຽກ R&D</b>
+    <span id="user-tag" style="font-size: 10px; background: #eee; padding: 2px 8px; border-radius: 4px; margin-left: 5px; font-weight: 700; color: #555;"></span>
   </div>
   <div style="display:flex; gap:8px;">
     <button class="btn" onclick="loadFromSheet()">🔄 ໂຫຼດໃໝ່</button>
@@ -108,9 +119,9 @@
   <div class="stats" id="stats-grid"></div>
   
   <div class="prog-row">
-    <span style="font-size:11px; color:#7a7670;">ຄວາມຄືບໜ້າລວມ</span>
+    <span style="font-size:11px; font-weight: 700; color:#5a5a5a;">ຄວາມຄືບໜ້າລວມ</span>
     <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
-    <span id="prog-pct" style="font-size:11px; font-weight:600; color:var(--accent);">0%</span>
+    <span id="prog-pct" style="font-size:12px; font-weight:700; color:var(--accent); min-width: 35px; text-align: right;">0%</span>
   </div>
 
   <div class="chart-container"><canvas id="performanceChart"></canvas></div>
@@ -133,17 +144,25 @@
   <div class="toolbar">
     <div class="search-box"><input type="text" id="searchInput" oninput="render()" placeholder="🔍 ຄົ້ນຫາຊື່ວຽກ/ຄົນ..."/></div>
     <div class="date-filter">
-      <span style="font-size:11px;">ເລີ່ມ:</span><input type="date" id="dateStart" onchange="render()"/>
-      <span style="font-size:11px;">ຫາ:</span><input type="date" id="dateEnd" onchange="render()"/>
+      <span style="font-size:11px; font-weight: 700;">ເລີ່ມ:</span><input type="date" id="dateStart" onchange="render()"/>
+      <span style="font-size:11px; font-weight: 700;">ຫາ:</span><input type="date" id="dateEnd" onchange="render()"/>
     </div>
-    <div id="statusFilters" style="display:flex; gap:6px;"></div>
+    <div id="statusFilters" style="display:flex; gap:8px;"></div>
   </div>
 
-  <div style="overflow-x:auto;">
+  <div class="table-wrapper">
     <table>
       <thead>
         <tr>
-          <th>#</th><th>ຊື່ວຽກ</th><th>ຜູ້ຮັບຜິດຊອບ</th><th>ວັນທີມອບ</th><th>ກຳນົດສົ່ງ</th><th>ສຳເລັດແທ້</th><th>ຄວາມສຳຄັນ</th><th>ສະຖານະ</th><th>ຈັດການ</th>
+          <th width="40">#</th>
+          <th>ຊື່ວຽກ</th>
+          <th>ຜູ້ຮັບຜິດຊອບ</th>
+          <th width="100">ວັນທີມອບ</th>
+          <th width="100">ກຳນົດສົ່ງ</th>
+          <th width="100">ສຳເລັດແທ້</th>
+          <th width="100">ຄວາມສຳຄັນ</th>
+          <th width="100">ສະຖານະ</th>
+          <th width="160">ຈັດການ</th>
         </tr>
       </thead>
       <tbody id="tbody"></tbody>
@@ -154,7 +173,6 @@
 <div class="toast" id="toast"></div>
 
 <script>
-// *** ຢ່າລືມປ່ຽນ URL ນີ້ໃຫ້ເປັນ Web App URL ຂອງທ່ານ ***
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyRX3NSAotb7Zjh5ESN4cDpj79mKW2EHyuE68cdiqvuzZeqjduvy4PKAL-Qx6h9Gp0c/exec";
 
 let tasks = [], users = [], filterSt = 'all', myChart = null;
@@ -163,24 +181,19 @@ let userRole = 'guest';
 const ST_NEXT  = { todo: 'doing', doing: 'done', done: 'todo' };
 const ST_LABEL = { todo: 'ລໍຖ້າ', doing: 'ດຳເນີນຢູ່', done: 'ສຳເລັດ' };
 const ST_CLS   = { todo: 'b-todo', doing: 'b-doing', done: 'b-done' };
+const PRIO_CLS = { h: 'p-high', m: 'p-mid', l: 'p-low' };
 const MV_LBL   = { todo: '▶ ເລີ່ມ', doing: '✓ ສຳເລັດ', done: '↺ ຣີເຊັດ' };
 const MV_CLS   = { todo: 'btn-go', doing: 'btn-accent', done: '' };
-const PRIO_LABEL = { h: '🔥ຮີບດ່ວນ', m: '⚡ປານກາງ', l: '💤ຕໍ່າ' };
+const PRIO_LABEL = { h: '🔥 ຮີບດ່ວນ', m: '⚡ ປານກາງ', l: '💤 ຕໍ່າ' };
 
-// --- Authentication Logic ---
 function handleLogin() {
   const u = document.getElementById('userInput').value.trim();
   const p = document.getElementById('passInput').value;
   const msg = document.getElementById('login-msg');
-
   let role = '';
   if (u === 'admin' && p === '1234') role = 'admin';
   else if (u === 'guest' && p === '1111') role = 'guest';
-  else {
-    msg.style.display = 'block';
-    return;
-  }
-
+  else { msg.style.display = 'block'; return; }
   localStorage.setItem('userRole', role);
   localStorage.setItem('isLoggedIn', 'true');
   userRole = role;
@@ -210,7 +223,6 @@ function startApp() {
   loadFromSheet();
 }
 
-// --- Data Management ---
 async function loadFromSheet() {
   const dot = document.getElementById('sync-dot');
   dot.className = 'sync-dot loading';
@@ -219,7 +231,6 @@ async function loadFromSheet() {
     const data = await res.json();
     tasks = data.tasks.map(t => ({...t, id: Number(t.id)})).filter(t => t.name);
     users = data.users;
-
     const select = document.getElementById('fAssign');
     select.innerHTML = '<option value="ບໍ່ລະບຸ">-- ເລືອກຜູ້ຮັບຜິດຊອບ --</option>';
     users.forEach(u => {
@@ -227,7 +238,6 @@ async function loadFromSheet() {
       opt.value = u.name; opt.textContent = u.name;
       select.appendChild(opt);
     });
-
     dot.className = 'sync-dot ok';
     document.getElementById('sync-text').textContent = "Sync ສຳເລັດ";
     document.getElementById('sync-time').textContent = new Date().toLocaleTimeString('lo-LA');
@@ -243,18 +253,15 @@ async function saveToSheet() {
   showToast("ບັນທຶກຂໍ້ມູນສຳເລັດ!");
 }
 
-// --- Chart Logic ---
 function updateChart() {
   const ctx = document.getElementById('performanceChart').getContext('2d');
   const userList = [...new Set(tasks.map(t => t.assignee))];
   const doneData = userList.map(u => tasks.filter(t => t.assignee === u && t.status === 'done').length);
   const pendingData = userList.map(u => tasks.filter(t => t.assignee === u && t.status !== 'done').length);
-  
   const pendingDetails = userList.map(u => {
     const list = tasks.filter(t => t.assignee === u && t.status !== 'done');
     return list.length === 0 ? 'ບໍ່ມີວຽກຄ້າງ' : list.map(t => `• ${t.name}`).join('\n');
   });
-
   if(myChart) myChart.destroy();
   myChart = new Chart(ctx, {
     type: 'bar',
@@ -285,27 +292,22 @@ function updateChart() {
   });
 }
 
-// --- UI Logic ---
 function render() {
   updateChart();
   const q = document.getElementById('searchInput').value.toLowerCase();
   const ds = document.getElementById('dateStart').value;
   const de = document.getElementById('dateEnd').value;
-  
   const tot = tasks.length, dn = tasks.filter(t => t.status === 'done').length;
   const pct = tot ? Math.round((dn / tot) * 100) : 0;
-  
   document.getElementById('stats-grid').innerHTML = `
-    <div class="stat-card"><b>${tot}</b><p>ວຽກທັງໝົດ</p></div>
-    <div class="stat-card" style="color:#7a4f0a"><b>${tasks.filter(t=>t.status==='doing').length}</b><p>ກຳລັງເຮັດ</p></div>
-    <div class="stat-card" style="color:var(--accent)"><b>${dn}</b><p>ສຳເລັດ</p></div>`;
+    <div class="stat-card"><b style="color:#1a4d8f">${tot}</b><p>ວຽກທັງໝົດ</p></div>
+    <div class="stat-card"><b style="color:#7a4f0a">${tasks.filter(t=>t.status==='doing').length}</b><p>ກຳລັງເຮັດ</p></div>
+    <div class="stat-card"><b style="color:var(--accent)">${dn}</b><p>ສຳເລັດ</p></div>`;
   document.getElementById('prog-fill').style.width = pct + '%';
   document.getElementById('prog-pct').textContent = pct + '%';
-
   const tabData = [['all','ທັງໝົດ', tot], ['todo','ລໍຖ້າ', tasks.filter(t=>t.status==='todo').length], ['doing','ດຳເນີນ', tasks.filter(t=>t.status==='doing').length], ['done','ສຳເລັດ', dn]];
   document.getElementById('statusFilters').innerHTML = tabData.map(([f,l,c]) => 
     `<button class="fp${filterSt===f?' on':''}" onclick="filterSt='${f}';render()">${l} <span class="cb">${c}</span></button>`).join('');
-
   document.getElementById('tbody').innerHTML = tasks
     .filter(t => {
       const matchSearch = t.name.toLowerCase().includes(q) || (t.assignee || "").toLowerCase().includes(q);
@@ -316,17 +318,19 @@ function render() {
     })
     .map((t, i) => {
       const actions = userRole === 'admin' ? `
-        <td style="display:flex; gap:4px;">
+        <td style="display:flex; gap:6px;">
           <button class="btn btn-sm ${MV_CLS[t.status]}" onclick="moveTask(${t.id})">${MV_LBL[t.status]}</button>
           <button class="btn btn-sm btn-wa" onclick="sendWA(${t.id})">WA</button>
-          <button class="btn btn-sm btn-danger" onclick="delTask(${t.id})">ລຶບ</button>
+          <button class="btn btn-sm btn-danger" onclick="delTask(${t.id})" title="ລຶບ">ລຶບ</button>
         </td>` : `<td>🔒 View Only</td>`;
-
       return `<tr>
-        <td>${i+1}</td><td><b>${t.name}</b></td><td>${t.assignee}</td>
-        <td>${fmtDate(t.assigned)}</td><td>${fmtDate(t.due)}</td>
-        <td style="color:var(--accent)">${fmtDate(t.completed_at)}</td>
-        <td><span class="badge ${ST_CLS[t.prio] || 'b-todo'}">${PRIO_LABEL[t.prio] || t.prio}</span></td>
+        <td style="color:#888; font-family: 'DM Mono'">${i+1}</td>
+        <td><b style="color:#111">${t.name}</b></td>
+        <td style="font-weight:500">${t.assignee}</td>
+        <td>${fmtDate(t.assigned)}</td>
+        <td>${fmtDate(t.due)}</td>
+        <td style="color:var(--accent); font-weight:600">${fmtDate(t.completed_at)}</td>
+        <td><span class="badge ${PRIO_CLS[t.prio] || 'b-todo'}">${PRIO_LABEL[t.prio] || t.prio}</span></td>
         <td><span class="badge ${ST_CLS[t.status]}">${ST_LABEL[t.status]}</span></td>
         ${actions}
       </tr>`;
@@ -346,11 +350,8 @@ async function addTask() {
         asEl = document.getElementById('fAssigned'), dEl = document.getElementById('fDue'), pEl = document.getElementById('fPrio');
   const name = nEl.value.trim();
   if(!name) return showToast("ໃສ່ຊື່ວຽກກ່ອນ!");
-
   tasks.push({ id: Date.now(), name, assignee: aEl.value, assigned: asEl.value, due: dEl.value, completed_at: '', prio: pEl.value, status: 'todo' });
   render(); await saveToSheet();
-  
-  // Clear Inputs
   nEl.value = ''; aEl.value = 'ບໍ່ລະບຸ'; asEl.value = ''; dEl.value = ''; pEl.value = 'm';
   showToast("ເພີ່ມວຽກສຳເລັດ!");
 }
@@ -380,8 +381,6 @@ function showToast(m) {
   const t = document.getElementById('toast'); t.textContent = m; t.className = "toast show";
   setTimeout(() => t.className = "toast", 2500);
 }
-
-// Start
 checkPreviousLogin();
 </script>
 </body>
