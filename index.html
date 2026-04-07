@@ -6,6 +6,8 @@
 <title>ກະດານຕິດຕາມວຽກ — R&D Center</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <style>
 :root{
   --bg:#f0ede8;--surface:#faf9f6;--card:#fff;
@@ -50,6 +52,7 @@ body{font-family:'Noto Sans Lao',sans-serif;background:var(--bg);color:var(--tex
 .prog-lbl{font-size:12px;font-weight:500;color:var(--accent);font-family:var(--mono);min-width:34px;}
 .panel{background:var(--card);border:1px solid var(--border-lt);border-radius:var(--r-lg);overflow:hidden;margin-bottom:14px;}
 .panel-head{padding:11px 14px;border-bottom:1px solid var(--border-lt);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;}
+.chart-container{padding:20px; background:var(--card); border:1px solid var(--border-lt); border-radius:var(--r-lg); margin-bottom:14px; height: 300px;}
 .form-grid{display:grid;grid-template-columns:2fr 1.2fr 1fr 1fr 1fr auto;gap:8px;padding:12px 14px;align-items:end;}
 .fg{display:flex;flex-direction:column;gap:4px;}
 .fg label{font-size:11px;color:var(--muted);font-weight:500;}
@@ -109,8 +112,13 @@ td{padding:9px 12px;border-bottom:1px solid var(--border-lt);vertical-align:midd
   </div>
 
   <div class="stats" id="stats-grid"></div>
+
+  <div class="chart-container">
+    <canvas id="performanceChart"></canvas>
+  </div>
+
   <div class="prog-row">
-    <span style="font-size:11px;color:var(--muted);">ຄວາມຄືບໜ້າ</span>
+    <span style="font-size:11px;color:var(--muted);">ຄວາມຄືບໜ້າລວມ</span>
     <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
     <span class="prog-lbl" id="prog-pct">0%</span>
   </div>
@@ -146,7 +154,6 @@ td{padding:9px 12px;border-bottom:1px solid var(--border-lt);vertical-align:midd
           <input type="date" id="dateStart" onchange="render()"/>
           <span style="font-size:11px; color:var(--muted);">ຫາ:</span>
           <input type="date" id="dateEnd" onchange="render()"/>
-          <button style="border:none; background:none; cursor:pointer; color:var(--accent); font-size:11px;" onclick="clearDateFilter()">ລ້າງ</button>
         </div>
 
         <div class="filter-group" id="statusFilters"></div>
@@ -182,6 +189,7 @@ let tasks = [];
 let filterSt = 'all';
 let filterPrio = 'all';
 let nextId = 1;
+let myChart = null;
 
 const ST_NEXT  = {todo:'doing', doing:'done', done:'todo'};
 const ST_LABEL = {todo:'ລໍຖ້າ', doing:'ດຳເນີນຢູ່', done:'ສຳເລັດ'};
@@ -193,10 +201,8 @@ const PRIO_CLS   = {h:'p-h', m:'p-m', l:'p-l'};
 
 function toggleCfg() { const p = document.getElementById('cfg-panel'); p.style.display = p.style.display==='none'?'block':'none'; }
 function saveConfig() { SCRIPT_URL = document.getElementById('cfg-url').value; localStorage.setItem('gs_url', SCRIPT_URL); loadFromSheet(); }
-
 function setStatusFilter(f) { filterSt = f; render(); }
 function setPrioFilter(f) { filterPrio = f; render(); }
-function clearDateFilter() { document.getElementById('dateStart').value = ''; document.getElementById('dateEnd').value = ''; render(); }
 
 function setSync(state, msg) {
   const dot = document.getElementById('sync-dot');
@@ -212,7 +218,7 @@ async function loadFromSheet() {
     const res = await fetch(SCRIPT_URL + '?t=' + Date.now(), { redirect: 'follow' });
     const json = await res.json();
     tasks = json.map(r => ({
-      id: Number(r.id), name: r.name, assignee: r.assignee,
+      id: Number(r.id), name: r.name, assignee: r.assignee || 'ບໍ່ລະບຸ',
       assigned: r.assigned ? r.assigned.split('T')[0] : '',
       due: r.due ? r.due.split('T')[0] : '',
       completed_at: r.completed_at ? r.completed_at.split('T')[0] : '',
@@ -232,12 +238,47 @@ async function saveToSheet() {
   } catch(e) { setSync('err', 'ບັນທຶກຜິດພາດ'); }
 }
 
+function updateChart() {
+  const ctx = document.getElementById('performanceChart').getContext('2d');
+  
+  // ຈັດກຸ່ມຂໍ້ມູນຕາມຜູ້ຮັບຜິດຊອບ
+  const users = [...new Set(tasks.map(t => t.assignee))];
+  const doneData = users.map(u => tasks.filter(t => t.assignee === u && t.status === 'done').length);
+  const pendingData = users.map(u => tasks.filter(t => t.assignee === u && t.status !== 'done').length);
+
+  if (myChart) myChart.destroy();
+
+  myChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: users,
+      datasets: [
+        { label: 'ວຽກຄ້າງ (Todo/Doing)', data: pendingData, backgroundColor: '#f5d08a' },
+        { label: 'ວຽກສຳເລັດ', data: doneData, backgroundColor: '#2d6a4f' }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        title: { display: true, text: 'ສະຖິຕິການເຮັດວຽກລາຍບຸກຄົນ', font: {family: 'Noto Sans Lao', size: 14} },
+        legend: { labels: { font: {family: 'Noto Sans Lao'} } }
+      },
+      scales: {
+        x: { stacked: true, ticks: {font: {family: 'Noto Sans Lao'}} },
+        y: { stacked: true, beginAtZero: true }
+      }
+    }
+  });
+}
+
 function fmtDate(d) {
   if(!d || d === '—') return '—';
   return new Date(d).toLocaleDateString('lo-LA', {day:'2-digit', month:'2-digit', year:'numeric'});
 }
 
 function render() {
+  updateChart();
   const q = document.getElementById('searchInput').value.toLowerCase();
   const ds = document.getElementById('dateStart').value;
   const de = document.getElementById('dateEnd').value;
@@ -254,7 +295,6 @@ function render() {
   document.getElementById('prog-fill').style.width = pct+'%';
   document.getElementById('prog-pct').textContent = pct+'%';
 
-  // Render Status & Prio Filters
   const stPills = [['all','ທັງໝົດ',tot], ['todo','ລໍຖ້າ',tasks.filter(t=>t.status==='todo').length], ['doing','ດຳເນີນ',tasks.filter(t=>t.status==='doing').length], ['done','ສຳເລັດ',dn]];
   document.getElementById('statusFilters').innerHTML = stPills.map(([f,l,c]) => 
     `<button class="fp${filterSt===f?' on':''}" onclick="setStatusFilter('${f}')">${l}<span class="cb">${c}</span></button>`).join('');
@@ -265,22 +305,12 @@ function render() {
     return `<button class="fp${filterPrio===f?' on':''}" onclick="setPrioFilter('${f}')">${l}<span class="cb">${count}</span></button>`;
   }).join('');
 
-  // ⚠️ Logic Filter ວັນທີ
   const vis = tasks.filter(t => {
     const matchSearch = t.name.toLowerCase().includes(q) || t.assignee.toLowerCase().includes(q);
     const matchStatus = filterSt === 'all' || t.status === filterSt;
     const matchPrio = filterPrio === 'all' || t.prio === filterPrio;
-    
-    // ກວດສອບຊ່ວງວັນທີ (ອີງຕາມວັນທີມອບວຽກ assigned)
     let matchDate = true;
-    if (ds && de) {
-      matchDate = t.assigned >= ds && t.assigned <= de;
-    } else if (ds) {
-      matchDate = t.assigned >= ds;
-    } else if (de) {
-      matchDate = t.assigned <= de;
-    }
-    
+    if (ds && de) matchDate = t.assigned >= ds && t.assigned <= de;
     return matchSearch && matchStatus && matchPrio && matchDate;
   });
 
@@ -304,10 +334,10 @@ function render() {
 
 async function addTask() {
   const name = document.getElementById('fName').value;
+  const assignee = document.getElementById('fAssign').value || 'ບໍ່ລະບຸ';
   if(!name) return toast('ກະລຸນາໃສ່ຊື່ວຽກ');
   tasks.push({
-    id: nextId++, name,
-    assignee: document.getElementById('fAssign').value,
+    id: nextId++, name, assignee,
     assigned: document.getElementById('fAssigned').value,
     due: document.getElementById('fDue').value,
     completed_at: '',
