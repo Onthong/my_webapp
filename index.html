@@ -222,10 +222,39 @@ async function moveTask(id) {
 }
 
 async function addTask() {
-  const name = document.getElementById('fName').value.trim();
+  const nameEl = document.getElementById('fName');
+  const assignEl = document.getElementById('fAssign');
+  const assignedEl = document.getElementById('fAssigned');
+  const dueEl = document.getElementById('fDue');
+  const prioEl = document.getElementById('fPrio');
+
+  const name = nameEl.value.trim();
   if(!name) return showToast("ໃສ່ຊື່ວຽກກ່ອນ!");
-  tasks.push({ id: Date.now(), name, assignee: document.getElementById('fAssign').value, assigned: document.getElementById('fAssigned').value, due: document.getElementById('fDue').value, completed_at: '', prio: document.getElementById('fPrio').value, status: 'todo' });
-  render(); await saveToSheet(); document.getElementById('fName').value = '';
+
+  // ເພີ່ມຂໍ້ມູນເຂົ້າໃນ Array tasks
+  tasks.push({ 
+    id: Date.now(), 
+    name, 
+    assignee: assignEl.value, 
+    assigned: assignedEl.value, 
+    due: dueEl.value, 
+    completed_at: '', 
+    prio: prioEl.value, 
+    status: 'todo' 
+  });
+
+  // ສະແດງຜົນ ແລະ ບັນທຶກລົງ Sheet
+  render(); 
+  await saveToSheet(); 
+
+  // --- ສ່ວນທີ່ເພີ່ມໃໝ່: ລ້າງຂໍ້ມູນໃນຊ່ອງປ້ອນອອກໃຫ້ໝົດ ---
+  nameEl.value = '';        // ລ້າງຊື່ວຽກ
+  assignEl.value = 'ບໍ່ລະບຸ'; // Reset ຜູ້ຮັບຜິດຊອບເປັນຄ່າເລີ່ມຕົ້ນ
+  assignedEl.value = '';    // ລ້າງວັນທີມອບ
+  dueEl.value = '';         // ລ້າງວັນທີກຳນົດ
+  prioEl.value = 'm';       // Reset ຄວາມສຳຄັນເປັນ "ປານກາງ"
+  
+  showToast("ເພີ່ມວຽກສຳເລັດແລ້ວ!");
 }
 
 async function delTask(id) {
