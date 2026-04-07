@@ -79,7 +79,7 @@ td{padding:12px;border-bottom:1px solid var(--border-lt);vertical-align:middle;}
 
 <div class="sync-bar">
   <div class="sync-dot" id="sync-dot"></div>
-  <span id="sync-text">ກຳລັງກວດສອບການເຊື່ອມຕໍ່...</span>
+  <span id="sync-text">ລໍຖ້າການເຊື່ອມຕໍ່...</span>
   <span id="sync-time" style="margin-left:auto; font-size:11px; font-family:var(--mono);"></span>
 </div>
 
@@ -97,7 +97,7 @@ td{padding:12px;border-bottom:1px solid var(--border-lt);vertical-align:middle;}
     <div class="panel-head" style="padding:11px 14px; border-bottom:1px solid var(--border-lt);"><b>ເພີ່ມວຽກໃໝ່</b></div>
     <div class="form-grid">
       <div class="fg"><label>ຊື່ວຽກ *</label><input id="fName" placeholder="ພິມຊື່ວຽກ..."/></div>
-      <div class="fg"><label>ຜູ້ຮັບຜິດຊອບ</label><select id="fAssign"><option value="ບໍ່ລະບຸ">-- ໂຫຼດລາຍຊື່ --</option></select></div>
+      <div class="fg"><label>ຜູ້ຮັບຜິດຊອບ</label><select id="fAssign"><option value="ບໍ່ລະບຸ">-- ເລືອກຜູ້ຮັບຜິດຊອບ --</option></select></div>
       <div class="fg"><label>ວັນທີມອບວຽກ</label><input id="fAssigned" type="date"/></div>
       <div class="fg"><label>ກຳນົດສຳເລັດ</label><input id="fDue" type="date"/></div>
       <div class="fg"><label>ຄວາມສຳຄັນ</label>
@@ -137,6 +137,7 @@ td{padding:12px;border-bottom:1px solid var(--border-lt);vertical-align:middle;}
 <div class="toast" id="toast"></div>
 
 <script>
+// ⚠️ ກະລຸນາປ່ຽນ URL ນີ້ໃຫ້ເປັນ Web App URL ຂອງເຈົ້າ
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw2hiCW0V2AWEJ2BgI2Q7m9TvFX66twqHhedW3wTZKuvUpCY9bu8MHs5a9V0-uRweRUVg/exec";
 let tasks = [], users = [], filterSt = 'all', nextId = 1, myChart = null;
 
@@ -172,6 +173,16 @@ async function loadFromSheet() {
   }
 }
 
+function fmtDate(d) {
+  if (!d || d === '—' || d === 'Invalid Date') return '—';
+  let dateStr = String(d).split('T')[0];
+  const parts = dateStr.split('-');
+  if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  const dateObj = new Date(d);
+  if (isNaN(dateObj.getTime())) return d;
+  return dateObj.toLocaleDateString('lo-LA', {day:'2-digit', month:'2-digit', year:'numeric'});
+}
+
 function updateChart() {
   const ctx = document.getElementById('performanceChart').getContext('2d');
   const allUsers = [...new Set(tasks.map(t => t.assignee))];
@@ -191,8 +202,7 @@ function sendWA(id) {
   const t = tasks.find(x => x.id === id);
   const u = users.find(x => x.name === t.assignee);
   if (!u || !u.phone) return alert("ບໍ່ພົບເບີໂທ WhatsApp ໃນ Sheet2");
-
-  const msg = `ສະບາຍດີ ${t.assignee},\nທ່ານມີວຽກມອບໝາຍໃໝ່:\n📌 ວຽກ: ${t.name}\n📅 Deadline: ${t.due || '-'}\n🚀 ຄວາມສຳຄັນ: ${PRIO_LABEL[t.prio]}`;
+  const msg = `ສະບາຍດີ ${t.assignee},\nທ່ານມີວຽກມອບໝາຍໃໝ່:\n📌 ວຽກ: ${t.name}\n📅 Deadline: ${fmtDate(t.due)}\n🚀 ຄວາມສຳຄັນ: ${PRIO_LABEL[t.prio]}`;
   window.open(`https://wa.me/${u.phone}?text=${encodeURIComponent(msg)}`, '_blank');
 }
 
@@ -223,8 +233,8 @@ function render() {
   document.getElementById('tbody').innerHTML = vis.map((t, i) => `
     <tr>
       <td>${i+1}</td><td><b>${t.name}</b></td><td>${t.assignee}</td>
-      <td class="td-due">${t.assigned||'-'}</td><td class="td-due">${t.due||'-'}</td>
-      <td class="td-due" style="color:var(--accent)">${t.completed_at||'-'}</td>
+      <td class="td-due">${fmtDate(t.assigned)}</td><td class="td-due">${fmtDate(t.due)}</td>
+      <td class="td-due" style="color:var(--accent)">${fmtDate(t.completed_at)}</td>
       <td><span class="badge ${PRIO_CLS[t.prio]}">${PRIO_LABEL[t.prio]}</span></td>
       <td><span class="badge ${ST_CLS[t.status]}">${ST_LABEL[t.status]}</span></td>
       <td style="display:flex; gap:4px;">
