@@ -170,14 +170,58 @@ function fmtDate(d) {
 function updateChart() {
   const ctx = document.getElementById('performanceChart').getContext('2d');
   const userList = [...new Set(tasks.map(t => t.assignee))];
-  const done = userList.map(u => tasks.filter(t => t.assignee === u && t.status === 'done').length);
-  const pending = userList.map(u => tasks.filter(t => t.assignee === u && t.status !== 'done').length);
+  
+  // ດຶງຂໍ້ມູນວຽກສຳເລັດ
+  const doneData = userList.map(u => tasks.filter(t => t.assignee === u && t.status === 'done').length);
+  
+  // ດຶງຂໍ້ມູນວຽກຄ້າງ
+  const pendingData = userList.map(u => tasks.filter(t => t.assignee === u && t.status !== 'done').length);
+  
+  // ສ້າງລາຍຊື່ວຽກຄ້າງຂອງແຕ່ລະຄົນເພື່ອສະແດງໃນ Tooltip
+  const pendingDetails = userList.map(u => {
+    return tasks
+      .filter(t => t.assignee === u && t.status !== 'done')
+      .map(t => `• ${t.name}`)
+      .join('\n');
+  });
+
   if(myChart) myChart.destroy();
   myChart = new Chart(ctx, {
-    type: 'bar', data: { labels: userList, datasets: [
-      { label: 'ວຽກຄ້າງ', data: pending, backgroundColor: '#f5d08a' },
-      { label: 'ວຽກສຳເລັດ', data: done, backgroundColor: '#2d6a4f' }
-    ]}, options: { responsive: true, maintainAspectRatio: false, scales: { x: {stacked: true}, y: {stacked: true} } }
+    type: 'bar',
+    data: {
+      labels: userList,
+      datasets: [
+        { 
+          label: 'ວຽກຄ້າງ', 
+          data: pendingData, 
+          backgroundColor: '#e63946', // ປ່ຽນເປັນສີແດງຕາມຕ້ອງການ
+          details: pendingDetails // ເກັບລາຍຊື່ວຽກໄວ້ບ່ອນນີ້
+        },
+        { 
+          label: 'ວຽກສຳເລັດ', 
+          data: doneData, 
+          backgroundColor: '#2d6a4f' 
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: { x: {stacked: true}, y: {stacked: true} },
+      plugins: {
+        tooltip: {
+          callbacks: {
+            // ເວລາເອົາ Cursor ໄປຊີ້ ໃຫ້ສະແດງລາຍຊື່ວຽກ
+            afterLabel: function(context) {
+              if (context.dataset.label === 'ວຽກຄ້າງ') {
+                return '\nລາຍຊື່ວຽກທີ່ຄ້າງ:\n' + context.dataset.details[context.dataIndex];
+              }
+              return '';
+            }
+          }
+        }
+      }
+    }
   });
 }
 
