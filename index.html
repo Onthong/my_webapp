@@ -395,6 +395,15 @@ function showToast(m) {
   setTimeout(() => t.className = "toast", 2500);
 }
 checkPreviousLogin();
+
+  // ຕັ້ງເວລາໃຫ້ Refresh ຂໍ້ມູນທຸກໆ 1 ນາທີ (60,000 milliseconds)
+setInterval(() => {
+  // ໃຫ້ໂຫຼດຂໍ້ມູນໃໝ່ສະເພາະຕອນທີ່ Login ເຂົ້າໄປແລ້ວເທົ່ານັ້ນ
+  if (localStorage.getItem('isLoggedIn') === 'true') {
+    console.log("Auto-refreshing data...");
+    loadFromSheet();
+  }
+}, 60000);
 </script>
 </body>
 </html>
