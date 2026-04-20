@@ -335,6 +335,9 @@ function startApp() {
   document.getElementById('user-tag').textContent = userRole.toUpperCase();
   if (userRole === 'admin') document.getElementById('admin-form').style.display = 'grid';
   loadFromSheet();
+    setInterval(() => {
+  loadFromSheet();
+}, 5 * 60 * 1000);
 }
 
 /* ─── Data: Load / Save ──────────────────────────────────── */
@@ -859,9 +862,6 @@ function sendWA(id) {
 
 /* ─── Boot ───────────────────────────────────────────────── */
 checkPreviousLogin();
-  setInterval(() => {
-  loadFromSheet();
-}, 5 * 60 * 1000);
 </script>
 </body>
 </html>
