@@ -76,6 +76,27 @@
   .fg label{font-size:11px;font-weight:700;color:#5a5a5a;}
   .fg input,.fg select{padding:8px 12px;border:1px solid var(--border);border-radius:8px;outline:none;height:38px;font-family:inherit;}
 
+  /* ===== Multi-Select Dropdown ===== */
+  .ms-wrap{position:relative;}
+  .ms-input{min-height:38px;border:1px solid var(--border);border-radius:8px;padding:4px 28px 4px 8px;cursor:pointer;display:flex;flex-wrap:wrap;gap:4px;align-items:center;background:#fff;transition:border-color 0.2s;}
+  .ms-input:hover{border-color:#aaa;}
+  .ms-input.open{border-color:var(--accent);}
+  .ms-placeholder{color:#aaa;font-size:12px;line-height:30px;}
+  .ms-arrow{position:absolute;right:9px;top:50%;transform:translateY(-50%);color:#aaa;font-size:11px;pointer-events:none;transition:transform 0.2s;}
+  .ms-input.open .ms-arrow{transform:translateY(-50%) rotate(180deg);}
+  .ms-tag{background:var(--accent-lt);color:var(--accent);border:1px solid #c9e6d5;border-radius:5px;padding:2px 6px 2px 8px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;}
+  .ms-tag-x{cursor:pointer;font-size:13px;line-height:1;color:var(--accent);opacity:0.7;}
+  .ms-tag-x:hover{opacity:1;}
+  .ms-dropdown{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,0.1);z-index:500;max-height:220px;overflow-y:auto;display:none;}
+  .ms-dropdown.open{display:block;}
+  .ms-opt{display:flex;align-items:center;gap:10px;padding:9px 12px;cursor:pointer;font-size:12px;transition:background 0.1s;}
+  .ms-opt:hover{background:#f0ede8;}
+  .ms-opt:first-child{border-radius:10px 10px 0 0;}
+  .ms-opt:last-child{border-radius:0 0 10px 10px;}
+  .ms-opt input[type=checkbox]{width:14px;height:14px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;}
+  .ms-opt.checked{background:var(--accent-lt);}
+  .ms-sep{height:1px;background:var(--border);margin:4px 0;}
+
   .toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:15px;background:var(--card);padding:14px;border-radius:var(--r);border:1px solid var(--border);}
   .search-box input{padding:8px 14px;border:1px solid var(--border);border-radius:8px;width:240px;outline:none;background:#f9f9f9;font-family:inherit;}
   .date-filter{display:flex;align-items:center;gap:8px;background:#f0ede8;padding:6px 12px;border-radius:8px;border:1px solid var(--border);}
@@ -196,7 +217,19 @@
   <!-- Admin Form (admin only) -->
   <div id="admin-form" class="form-grid">
     <div class="fg"><label>ຊື່ວຽກ *</label><input id="fName" placeholder="ພິມຊື່ວຽກ..."/></div>
-    <div class="fg"><label>ຜູ້ຮັບຜິດຊອບ</label><select id="fAssign"><option value="ບໍ່ລະບຸ">-- ເລືອກ --</option></select></div>
+    <div class="fg">
+      <label>ຜູ້ຮັບຜິດຊອບ <span style="font-weight:400;color:#aaa;">(ເລືອກໄດ້ຫຼາຍຄົນ)</span></label>
+      <div class="ms-wrap" id="assignWrap">
+        <div class="ms-input" id="assignInput" onclick="toggleAssignDD(event)">
+          <span class="ms-placeholder" id="assignPH">-- ເລືອກຜູ້ຮັບຜິດຊອບ --</span>
+          <div id="assignTags" style="display:flex;flex-wrap:wrap;gap:4px;"></div>
+          <span class="ms-arrow">▾</span>
+        </div>
+        <div class="ms-dropdown" id="assignDD">
+          <div id="assignOpts"></div>
+        </div>
+      </div>
+    </div>
     <div class="fg"><label>ວັນທີມອບວຽກ</label><input id="fAssigned" type="date"/></div>
     <div class="fg"><label>ກຳນົດສຳເລັດ</label><input id="fDue" type="date"/></div>
     <div class="fg"><label>ຄວາມສຳຄັນ</label>
@@ -315,15 +348,8 @@ async function loadFromSheet() {
     tasks = data.tasks.map(t => ({ ...t, id: Number(t.id) })).filter(t => t.name);
     users = data.users || [];
 
-    /* populate assignee dropdown */
-    const select = document.getElementById('fAssign');
-    select.innerHTML = '<option value="ບໍ່ລະບຸ">-- ເລືອກຜູ້ຮັບຜິດຊອບ --</option>';
-    users.forEach(u => {
-      const opt = document.createElement('option');
-      opt.value       = u.name;
-      opt.textContent = u.name;
-      select.appendChild(opt);
-    });
+    /* populate assignee multi-select */
+    populateAssignDD();
 
     dot.className = 'sync-dot ok';
     document.getElementById('sync-text').textContent = 'Sync ສຳເລັດ';
@@ -373,16 +399,22 @@ function showToast(m) {
   setTimeout(() => { t.className = 'toast'; }, 2500);
 }
 
-/* ─── Person Stats Computation (NEW) ────────────────────── */
+/* ─── Person Stats Computation ───────────────────────────── */
+function splitAssignees(raw) {
+  /* Split "ສົມ, ໄຊ, ນາງ" → ['ສົມ','ໄຊ','ນາງ'], filter blanks */
+  return (raw || '').split(',').map(a => a.trim()).filter(a => a && a !== 'ບໍ່ລະບຸ');
+}
+
 function computePersonStats() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  /* get unique assignees (excluding blank / ບໍ່ລະບຸ) */
-  const names = [...new Set(tasks.map(t => t.assignee).filter(a => a && a !== 'ບໍ່ລະບຸ'))];
+  /* collect unique individual names across all tasks */
+  const names = [...new Set(tasks.flatMap(t => splitAssignees(t.assignee)))];
 
   return names.map(name => {
-    const myTasks = tasks.filter(t => t.assignee === name);
+    /* a task belongs to this person if their name is in the comma list */
+    const myTasks = tasks.filter(t => splitAssignees(t.assignee).includes(name));
 
     const done    = myTasks.filter(t => t.status === 'done');
     const pending = myTasks.filter(t => t.status !== 'done');
@@ -509,7 +541,7 @@ function updateChart() {
 
   /* build tooltip details for pending */
   const pendingDetails = userList.map(name => {
-    const list = tasks.filter(t => t.assignee === name && t.status !== 'done');
+    const list = tasks.filter(t => splitAssignees(t.assignee).includes(name) && t.status !== 'done');
     return list.length === 0 ? 'ບໍ່ມີວຽກຄ້າງ' : list.map(t => `• ${t.name}`).join('\n');
   });
 
@@ -666,6 +698,71 @@ function render() {
     .join('');
 }
 
+/* ─── Multi-Select Dropdown Logic ────────────────────────── */
+function populateAssignDD() {
+  const opts = document.getElementById('assignOpts');
+  if (!opts) return;
+  opts.innerHTML = users.map(u =>
+    `<label class="ms-opt" id="ms-opt-${CSS.escape(u.name)}">
+       <input type="checkbox" value="${u.name}" onchange="refreshAssignTags()"> ${u.name}
+     </label>`
+  ).join('');
+}
+
+function toggleAssignDD(e) {
+  e.stopPropagation();
+  const input = document.getElementById('assignInput');
+  const dd    = document.getElementById('assignDD');
+  const isOpen = dd.classList.contains('open');
+  dd.classList.toggle('open', !isOpen);
+  input.classList.toggle('open', !isOpen);
+}
+
+function refreshAssignTags() {
+  const checked  = [...document.querySelectorAll('#assignOpts input:checked')];
+  const tagsEl   = document.getElementById('assignTags');
+  const ph       = document.getElementById('assignPH');
+  /* update .checked class on rows */
+  document.querySelectorAll('#assignOpts .ms-opt').forEach(row => {
+    row.classList.toggle('checked', row.querySelector('input').checked);
+  });
+  if (checked.length === 0) {
+    ph.style.display = '';
+    tagsEl.innerHTML = '';
+  } else {
+    ph.style.display = 'none';
+    tagsEl.innerHTML = checked.map(cb =>
+      `<span class="ms-tag">${cb.value}
+         <span class="ms-tag-x" onclick="removeAssignee(event,'${cb.value}')">×</span>
+       </span>`
+    ).join('');
+  }
+}
+
+function removeAssignee(e, name) {
+  e.stopPropagation();
+  const cb = document.querySelector(`#assignOpts input[value="${name}"]`);
+  if (cb) { cb.checked = false; refreshAssignTags(); }
+}
+
+function getSelectedAssignees() {
+  return [...document.querySelectorAll('#assignOpts input:checked')].map(cb => cb.value);
+}
+
+function clearAssignDD() {
+  document.querySelectorAll('#assignOpts input').forEach(cb => cb.checked = false);
+  refreshAssignTags();
+}
+
+/* close dropdown when clicking outside */
+document.addEventListener('click', function(e) {
+  const wrap = document.getElementById('assignWrap');
+  if (wrap && !wrap.contains(e.target)) {
+    document.getElementById('assignDD').classList.remove('open');
+    document.getElementById('assignInput').classList.remove('open');
+  }
+});
+
 /* ─── Task Actions ───────────────────────────────────────── */
 async function moveTask(id) {
   const t = tasks.find(x => x.id === id);
@@ -681,16 +778,17 @@ async function moveTask(id) {
 
 async function addTask() {
   const nEl  = document.getElementById('fName');
-  const aEl  = document.getElementById('fAssign');
   const asEl = document.getElementById('fAssigned');
   const dEl  = document.getElementById('fDue');
   const pEl  = document.getElementById('fPrio');
   const name = nEl.value.trim();
   if (!name) return showToast("ໃສ່ຊື່ວຽກກ່ອນ!");
+  const selected   = getSelectedAssignees();
+  const assigneeStr = selected.length > 0 ? selected.join(', ') : 'ບໍ່ລະບຸ';
   tasks.push({
     id:           Date.now(),
     name,
-    assignee:     aEl.value,
+    assignee:     assigneeStr,
     assigned:     asEl.value,
     due:          dEl.value,
     completed_at: '',
@@ -699,7 +797,8 @@ async function addTask() {
   });
   render();
   await saveToSheet();
-  nEl.value = ''; aEl.value = 'ບໍ່ລະບຸ'; asEl.value = ''; dEl.value = ''; pEl.value = 'm';
+  nEl.value = ''; asEl.value = ''; dEl.value = ''; pEl.value = 'm';
+  clearAssignDD();
   showToast("ເພີ່ມວຽກສຳເລັດ!");
 }
 
@@ -713,10 +812,17 @@ async function delTask(id) {
 function sendWA(id) {
   const t = tasks.find(x => x.id === id);
   if (!t) return;
-  const u = users.find(x => x.name.replace(/\s+/g, '') === (t.assignee || '').replace(/\s+/g, ''));
-  if (!u || !u.phone) return alert("ບໍ່ພົບເບີ WhatsApp ໃນ Sheet2");
-  const msg = `ສະບາຍດີ ${t.assignee},\nທ່ານມີວຽກໃໝ່:\n📌 ວຽກ: ${t.name}\n📅 Deadline: ${fmtDate(t.due)}`;
-  window.open(`https://wa.me/${u.phone}?text=${encodeURIComponent(msg)}`, '_blank');
+  const names = splitAssignees(t.assignee);
+  if (names.length === 0) return alert("ບໍ່ມີຜູ້ຮັບຜິດຊອບ");
+  let sent = 0;
+  names.forEach(aName => {
+    const u = users.find(x => x.name.replace(/\s+/g,'') === aName.replace(/\s+/g,''));
+    if (!u || !u.phone) return;
+    const msg = `ສະບາຍດີ ${aName},\nທ່ານມີວຽກ:\n📌 ວຽກ: ${t.name}\n📅 Deadline: ${fmtDate(t.due)}`;
+    window.open(`https://wa.me/${u.phone}?text=${encodeURIComponent(msg)}`, '_blank');
+    sent++;
+  });
+  if (sent === 0) alert("ບໍ່ພົບເບີ WhatsApp ໃນ Sheet2");
 }
 
 /* ─── Boot ───────────────────────────────────────────────── */
