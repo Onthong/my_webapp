@@ -3,129 +3,197 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Task Tracker R&D Center</title>
+<title>Task Tracker R&D — Professional Version</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
   :root{ --bg:#f0ede8; --surface:#faf9f6; --card:#fff; --border:#dedad3; --accent:#2d6a4f; --accent-lt:#e8f5ee; --r:12px; --danger:#ff4d4d; }
   *{box-sizing:border-box; margin:0; padding:0;}
-  body{font-family:'Noto Sans Lao',sans-serif; background:var(--bg); color:#1c1a17; font-size:13px; line-height: 1.5;}
-  
-  /* Login Screen */
-  #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f0ede8; z-index: 2000; display: flex; align-items: center; justify-content: center; }
-  .login-box { background: white; padding: 35px; border-radius: 15px; border: 1px solid #dedad3; width: 350px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
-  .login-box input { width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid #dedad3; border-radius: 8px; outline: none; transition: 0.2s; }
-  .login-box input:focus { border-color: var(--accent); }
-  .btn-login { width: 100%; padding: 12px; background: var(--accent); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; }
+  body{font-family:'Noto Sans Lao',sans-serif; background:var(--bg); color:#1c1a17; font-size:13px; line-height:1.5;}
 
-  /* Layout */
-  .header{background:var(--card); border-bottom:1px solid var(--border); padding:12px 24px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100;}
-  .sync-bar{display:flex; padding:6px 24px; background:var(--surface); border-bottom:1px solid var(--border); font-size:11px; color:#7a7670;}
-  .sync-dot{width:8px; height:8px; border-radius:50%; margin-right:6px; background:#ccc;}
+  /* ===== Login Screen ===== */
+  #login-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:#f0ede8;z-index:2000;display:flex;align-items:center;justify-content:center;}
+  .login-box{background:white;padding:35px;border-radius:15px;border:1px solid #dedad3;width:350px;text-align:center;box-shadow:0 10px 25px rgba(0,0,0,0.05);}
+  .login-box input{width:100%;padding:12px;margin-bottom:12px;border:1px solid #dedad3;border-radius:8px;outline:none;transition:0.2s;font-family:inherit;}
+  .login-box input:focus{border-color:var(--accent);}
+  .btn-login{width:100%;padding:12px;background:var(--accent);color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px;font-family:inherit;}
+
+  /* ===== Layout ===== */
+  .header{background:var(--card);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+  .sync-bar{display:flex;padding:6px 24px;background:var(--surface);border-bottom:1px solid var(--border);font-size:11px;color:#7a7670;align-items:center;}
+  .sync-dot{width:8px;height:8px;border-radius:50%;margin-right:6px;background:#ccc;flex-shrink:0;}
   .sync-dot.ok{background:#3b6d11;}
-  .sync-dot.loading{background:#854f0b; animation:blink 1s infinite;}
+  .sync-dot.loading{background:#854f0b;animation:blink 1s infinite;}
   @keyframes blink{50%{opacity:0.3;}}
-  
-  .main{max-width:1300px; margin:0 auto; padding:20px;}
-  .stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px; margin-bottom:15px;}
-  .stat-card{background:var(--card); border-radius:var(--r); padding:18px; border:1px solid var(--border); text-align:center; box-shadow: 0 2px 4px rgba(0,0,0,0.02);}
-  .stat-card b { font-size: 18px; display: block; margin-bottom: 4px; }
-  
-  .chart-container{background:var(--card); border-radius:var(--r); padding:20px; border:1px solid var(--border); margin-bottom:15px; height:340px;}
-  
-  .prog-row{display:flex; align-items:center; gap:10px; margin-bottom:20px;}
-  .prog-bar{flex:1; height:8px; background:#ddd; border-radius:10px; overflow:hidden;}
-  .prog-fill{height:100%; background:var(--accent); transition:0.4s;}
 
-  /* Forms & Toolbar */
-  .form-grid{display:none; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; background:var(--card); padding:20px; border-radius:var(--r); border:1px solid var(--border); margin-bottom:20px; align-items:end; box-shadow: 0 2px 6px rgba(0,0,0,0.02);}
-  .fg{display:flex; flex-direction:column; gap:6px;}
-  .fg label{font-size:11px; font-weight:700; color:#5a5a5a;}
-  .fg input, .fg select{padding:8px 12px; border:1px solid var(--border); border-radius:8px; outline:none; height:38px; font-family: inherit;}
+  .main{max-width:1380px;margin:0 auto;padding:20px;}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:15px;}
+  .stat-card{background:var(--card);border-radius:var(--r);padding:18px;border:1px solid var(--border);text-align:center;box-shadow:0 2px 4px rgba(0,0,0,0.02);}
+  .stat-card b{font-size:18px;display:block;margin-bottom:4px;}
 
-  .toolbar{display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:15px; background:var(--card); padding:14px; border-radius:var(--r); border:1px solid var(--border);}
-  .search-box input{padding:8px 14px; border:1px solid var(--border); border-radius:8px; width:240px; outline:none; background: #f9f9f9;}
-  .date-filter{display:flex; align-items:center; gap:8px; background:#f0ede8; padding:6px 12px; border-radius:8px; border:1px solid var(--border);}
-  .date-filter input{border:none; background:transparent; font-size:12px; outline:none; cursor:pointer; font-family: inherit;}
+  /* ===== Progress Bar ===== */
+  .prog-row{display:flex;align-items:center;gap:10px;margin-bottom:15px;}
+  .prog-bar{flex:1;height:8px;background:#ddd;border-radius:10px;overflow:hidden;}
+  .prog-fill{height:100%;background:var(--accent);transition:0.4s;}
 
-  /* Tabs */
-  .fp{padding:7px 16px; border:1px solid var(--border); border-radius:999px; font-size:12px; cursor:pointer; background:var(--card); display:inline-flex; align-items:center; gap:8px; transition:0.2s; font-weight: 500;}
-  .fp.on{background:#1c1a17; color:#fff; border-color:#1c1a17;}
-  .cb{font-size:10px; background:#eee; color:#666; padding:1px 7px; border-radius:10px; font-weight:bold;}
-  .fp.on .cb{background:rgba(255,255,255,0.2); color:#fff;}
+  /* ===== Chart + Stats Row (NEW LAYOUT) ===== */
+  .chart-row{display:flex;gap:15px;margin-bottom:15px;height:420px;}
+  .chart-box{flex:1;background:var(--card);border-radius:var(--r);padding:16px 16px 16px 16px;border:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;min-width:0;}
+  .chart-canvas-wrap{flex:1;position:relative;min-height:0;width:100%;}
+  .chart-canvas-wrap canvas{position:absolute;top:0;left:0;width:100%!important;height:100%!important;}
 
-  /* Buttons */
-  .btn{padding:8px 14px; border-radius:8px; border:1px solid var(--border); cursor:pointer; font-size:12px; display:inline-flex; align-items:center; gap:6px; transition: 0.1s; font-weight: 600;}
-  .btn-accent{background:var(--accent); color:white; border:none;}
-  .btn-go{background:var(--accent-lt); color:var(--accent); border-color:#95d5b2;}
-  .btn-wa{background:#25D366 !important; color:white !important; border:none;}
-  .btn-danger{background:#fff5f5; color:#9b2323; border-color:#fbc8c8;}
-  .btn:active{transform: scale(0.96);}
+  /* ===== Person Stats Panel (NEW) ===== */
+  .person-panel{width:340px;flex-shrink:0;background:var(--card);border-radius:var(--r);border:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+  .person-panel-header{padding:13px 16px;border-bottom:1px solid var(--border);background:#f8f9fa;flex-shrink:0;}
+  .person-panel-header h3{font-size:13px;font-weight:700;color:#1c1a17;}
+  .person-panel-header p{font-size:11px;color:#7a7670;margin-top:2px;}
+  .person-panel-body{overflow-y:auto;flex:1;padding:10px;min-height:0;}
+  .person-card{border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;background:#fff;transition:box-shadow 0.2s;}
+  .person-card:hover{box-shadow:0 3px 10px rgba(0,0,0,0.06);}
+  .person-card:last-child{margin-bottom:0;}
+  .person-card-top{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+  .rank-badge{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;}
+  .rank-1{background:#ffd700;color:#7a5000;}
+  .rank-2{background:#e8e8e8;color:#555;}
+  .rank-3{background:#f4c68c;color:#7a4000;}
+  .rank-other{background:#eef4fb;color:#1a4d8f;}
+  .person-name{font-weight:700;font-size:13px;color:#1c1a17;flex:1;}
+  .person-total{font-size:10px;color:#7a7670;background:#f0ede8;padding:2px 8px;border-radius:10px;}
+  .person-stats-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;}
+  .psg-item{background:#f8f9fa;border-radius:8px;padding:7px 8px;text-align:center;}
+  .psg-item b{display:block;font-size:16px;font-weight:800;line-height:1.2;}
+  .psg-item span{font-size:9px;color:#7a7670;font-weight:600;text-transform:uppercase;letter-spacing:0.3px;}
+  .psg-ontime b{color:#2d6a4f;}
+  .psg-late b{color:#c0392b;}
+  .psg-pending b{color:#7a4f0a;}
+  .late-detail{margin-top:7px;font-size:10px;color:#c0392b;background:#fff5f5;border:1px solid #fce4e4;border-radius:6px;padding:5px 8px;}
+  .overdue-detail{margin-top:5px;font-size:10px;color:#7a4f0a;background:#fef5e7;border:1px solid #fae7cb;border-radius:6px;padding:5px 8px;}
+  .no-task-msg{text-align:center;padding:30px;color:#aaa;font-size:12px;}
 
-  /* Modern Table Style */
-  .table-wrapper { overflow-x: auto; background: var(--card); border-radius: var(--r); border: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
-  table{width:100%; border-collapse:separate; border-spacing: 0;}
-  th{background:#f8f9fa; padding:15px 12px; text-align:left; font-size:11px; font-weight:700; color:#5a5a5a; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid var(--border);}
-  td{padding:15px 12px; border-bottom:1px solid #f0ede8; vertical-align:middle; font-size: 13px; color: #333;}
-  tr:last-child td { border-bottom: none; }
-  tr:hover td { background-color: #fcfbf9; }
+  /* ===== Forms & Toolbar ===== */
+  .form-grid{display:none;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;background:var(--card);padding:20px;border-radius:var(--r);border:1px solid var(--border);margin-bottom:20px;align-items:end;box-shadow:0 2px 6px rgba(0,0,0,0.02);}
+  .fg{display:flex;flex-direction:column;gap:6px;}
+  .fg label{font-size:11px;font-weight:700;color:#5a5a5a;}
+  .fg input,.fg select{padding:8px 12px;border:1px solid var(--border);border-radius:8px;outline:none;height:38px;font-family:inherit;}
 
-  .badge{padding:4px 10px; border-radius:6px; font-size:10px; font-weight:700; display: inline-flex; align-items: center; gap:4px;}
-  .b-todo{background:#eef4fb; color:#1a4d8f; border: 1px solid #d0e1f5;}
-  .b-doing{background:#fef5e7; color:#7a4f0a; border: 1px solid #fae7cb;}
-  .b-done{background:var(--accent-lt); color:var(--accent); border: 1px solid #c9e6d5;}
-  
-  .p-high { background: #fff0f0; color: #d63031; }
-  .p-mid { background: #fef5e7; color: #7a4f0a; }
-  .p-low { background: #eef4fb; color: #1a4d8f; }
+  .toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:15px;background:var(--card);padding:14px;border-radius:var(--r);border:1px solid var(--border);}
+  .search-box input{padding:8px 14px;border:1px solid var(--border);border-radius:8px;width:240px;outline:none;background:#f9f9f9;font-family:inherit;}
+  .date-filter{display:flex;align-items:center;gap:8px;background:#f0ede8;padding:6px 12px;border-radius:8px;border:1px solid var(--border);}
+  .date-filter input{border:none;background:transparent;font-size:12px;outline:none;cursor:pointer;font-family:inherit;}
 
-  .toast{position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#000; color:#fff; padding:10px 20px; border-radius:10px; opacity:0; transition:0.3s; z-index:1000;}
+  /* ===== Tabs ===== */
+  .fp{padding:7px 16px;border:1px solid var(--border);border-radius:999px;font-size:12px;cursor:pointer;background:var(--card);display:inline-flex;align-items:center;gap:8px;transition:0.2s;font-weight:500;font-family:inherit;}
+  .fp.on{background:#1c1a17;color:#fff;border-color:#1c1a17;}
+  .cb{font-size:10px;background:#eee;color:#666;padding:1px 7px;border-radius:10px;font-weight:bold;}
+  .fp.on .cb{background:rgba(255,255,255,0.2);color:#fff;}
+
+  /* ===== Buttons ===== */
+  .btn{padding:8px 14px;border-radius:8px;border:1px solid var(--border);cursor:pointer;font-size:12px;display:inline-flex;align-items:center;gap:6px;transition:0.1s;font-weight:600;font-family:inherit;}
+  .btn-accent{background:var(--accent);color:white;border:none;}
+  .btn-go{background:var(--accent-lt);color:var(--accent);border-color:#95d5b2;}
+  .btn-wa{background:#25D366!important;color:white!important;border:none;}
+  .btn-danger{background:#fff5f5;color:#9b2323;border-color:#fbc8c8;}
+  .btn:active{transform:scale(0.96);}
+
+  /* ===== Table ===== */
+  .table-wrapper{overflow-x:auto;background:var(--card);border-radius:var(--r);border:1px solid var(--border);box-shadow:0 2px 8px rgba(0,0,0,0.02);}
+  table{width:100%;border-collapse:separate;border-spacing:0;}
+  th{background:#f8f9fa;padding:15px 12px;text-align:left;font-size:11px;font-weight:700;color:#5a5a5a;text-transform:uppercase;letter-spacing:0.5px;border-bottom:2px solid var(--border);}
+  td{padding:15px 12px;border-bottom:1px solid #f0ede8;vertical-align:middle;font-size:13px;color:#333;}
+  tr:last-child td{border-bottom:none;}
+  tr:hover td{background-color:#fcfbf9;}
+
+  .badge{padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;gap:4px;}
+  .b-todo{background:#eef4fb;color:#1a4d8f;border:1px solid #d0e1f5;}
+  .b-doing{background:#fef5e7;color:#7a4f0a;border:1px solid #fae7cb;}
+  .b-done{background:var(--accent-lt);color:var(--accent);border:1px solid #c9e6d5;}
+  .p-high{background:#fff0f0;color:#d63031;}
+  .p-mid{background:#fef5e7;color:#7a4f0a;}
+  .p-low{background:#eef4fb;color:#1a4d8f;}
+
+  /* ===== Toast ===== */
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#000;color:#fff;padding:10px 20px;border-radius:10px;opacity:0;transition:0.3s;z-index:9999;pointer-events:none;}
   .toast.show{opacity:1;}
+
+  /* ===== Responsive ===== */
+  @media(max-width:900px){
+    .chart-row{flex-direction:column;height:auto;}
+    .chart-box{height:320px;}
+    .person-panel{width:100%;height:380px;}
+  }
 </style>
 </head>
 <body>
 
+<!-- ===== LOGIN OVERLAY ===== -->
 <div id="login-overlay">
   <div class="login-box">
-    <span style="font-size: 50px;">🚀</span>
-    <h2 style="margin: 15px 0;">R&D Tracker</h2>
-    <p style="color:#7a7670; font-size:12px; margin-bottom:20px;">ກະລຸນາເຂົ້າສູ່ລະບົບເພື່ອຈັດການວຽກ</p>
-    <input type="text" id="userInput" placeholder="ຊື່ຜູ້ໃຊ້ (admin/guest)">
-    <input type="password" id="passInput" placeholder="ລະຫັດຜ່ານ">
+    <span style="font-size:50px;">🚀</span>
+    <h2 style="margin:15px 0;">R&amp;D Tracker</h2>
+    <p style="color:#7a7670;font-size:12px;margin-bottom:20px;">ກະລຸນາເຂົ້າສູ່ລະບົບເພື່ອຈັດການວຽກ</p>
+    <input type="text" id="userInput" placeholder="ຊື່ຜູ້ໃຊ້ (admin/guest)" onkeydown="if(event.key==='Enter')handleLogin()">
+    <input type="password" id="passInput" placeholder="ລະຫັດຜ່ານ" onkeydown="if(event.key==='Enter')handleLogin()">
     <button class="btn-login" onclick="handleLogin()">ເຂົ້າສູ່ລະບົບ</button>
-    <p id="login-msg" style="color: #9b2323; font-size: 11px; margin-top: 10px; display: none;">ຊື່ ຫຼື ລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ!</p>
+    <p id="login-msg" style="color:#9b2323;font-size:11px;margin-top:10px;display:none;">ຊື່ ຫຼື ລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ!</p>
   </div>
 </div>
 
+<!-- ===== HEADER ===== -->
 <header class="header">
-  <div style="display:flex; align-items:center; gap:10px;">
+  <div style="display:flex;align-items:center;gap:10px;">
     <span style="font-size:24px;">📝</span>
-    <b style="font-size: 16px;">ກະດານຕິດຕາມວຽກ R&D Center</b>
-    <span id="user-tag" style="font-size: 10px; background: #eee; padding: 2px 8px; border-radius: 4px; margin-left: 5px; font-weight: 700; color: #555;"></span>
+    <b style="font-size:16px;">ກະດານຕິດຕາມວຽກ R&amp;D</b>
+    <span id="user-tag" style="font-size:10px;background:#eee;padding:2px 8px;border-radius:4px;margin-left:5px;font-weight:700;color:#555;"></span>
   </div>
-  <div style="display:flex; gap:8px;">
+  <div style="display:flex;gap:8px;">
     <button class="btn" onclick="loadFromSheet()">🔄 ໂຫຼດໃໝ່</button>
     <button class="btn btn-danger" style="background:#fff;" onclick="logout()">🚪 ອອກຈາກລະບົບ</button>
   </div>
 </header>
 
+<!-- ===== SYNC BAR ===== -->
 <div class="sync-bar">
   <div class="sync-dot" id="sync-dot"></div>
   <span id="sync-text">ລໍຖ້າການເຊື່ອມຕໍ່...</span>
   <span id="sync-time" style="margin-left:auto;"></span>
 </div>
 
+<!-- ===== MAIN ===== -->
 <main class="main">
+
+  <!-- Stats Cards -->
   <div class="stats" id="stats-grid"></div>
-  
+
+  <!-- Progress Bar -->
   <div class="prog-row">
-    <span style="font-size:11px; font-weight: 700; color:#5a5a5a;">ຄວາມຄືບໜ້າລວມ</span>
+    <span style="font-size:11px;font-weight:700;color:#5a5a5a;">ຄວາມຄືບໜ້າລວມ</span>
     <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
-    <span id="prog-pct" style="font-size:12px; font-weight:700; color:var(--accent); min-width: 35px; text-align: right;">0%</span>
+    <span id="prog-pct" style="font-size:12px;font-weight:700;color:var(--accent);min-width:35px;text-align:right;">0%</span>
   </div>
 
-  <div class="chart-container"><canvas id="performanceChart"></canvas></div>
+  <!-- ===== CHART ROW: Graph (left) + Person Stats Panel (right) ===== -->
+  <div class="chart-row">
+    <!-- Bar Chart -->
+    <div class="chart-box">
+      <div style="font-size:12px;font-weight:700;color:#5a5a5a;margin-bottom:10px;flex-shrink:0;">📊 ພາບລວມຜົນງານທີມ</div>
+      <div class="chart-canvas-wrap">
+        <canvas id="performanceChart"></canvas>
+      </div>
+    </div>
 
+    <!-- Person Stats Panel (NEW) -->
+    <div class="person-panel">
+      <div class="person-panel-header">
+        <h3>🏆 ອັນດັບສະຖິຕິລາຍຄົນ</h3>
+        <p>ຈັດລຽງຕາມວຽກຄ້າງ (ຫຼາຍ → ໜ້ອຍ)</p>
+      </div>
+      <div class="person-panel-body" id="person-stats-panel">
+        <div class="no-task-msg">ກຳລັງໂຫຼດຂໍ້ມູນ...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Form (admin only) -->
   <div id="admin-form" class="form-grid">
     <div class="fg"><label>ຊື່ວຽກ *</label><input id="fName" placeholder="ພິມຊື່ວຽກ..."/></div>
     <div class="fg"><label>ຜູ້ຮັບຜິດຊອບ</label><select id="fAssign"><option value="ບໍ່ລະບຸ">-- ເລືອກ --</option></select></div>
@@ -141,15 +209,19 @@
     <button class="btn btn-accent" onclick="addTask()">+ ເພີ່ມວຽກ</button>
   </div>
 
+  <!-- Toolbar -->
   <div class="toolbar">
     <div class="search-box"><input type="text" id="searchInput" oninput="render()" placeholder="🔍 ຄົ້ນຫາຊື່ວຽກ/ຄົນ..."/></div>
     <div class="date-filter">
-      <span style="font-size:11px; font-weight: 700;">ເລີ່ມ:</span><input type="date" id="dateStart" onchange="render()"/>
-      <span style="font-size:11px; font-weight: 700;">ຫາ:</span><input type="date" id="dateEnd" onchange="render()"/>
+      <span style="font-size:11px;font-weight:700;">ເລີ່ມ:</span>
+      <input type="date" id="dateStart" onchange="render()"/>
+      <span style="font-size:11px;font-weight:700;">ຫາ:</span>
+      <input type="date" id="dateEnd" onchange="render()"/>
     </div>
-    <div id="statusFilters" style="display:flex; gap:8px;"></div>
+    <div id="statusFilters" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
   </div>
 
+  <!-- Task Table -->
   <div class="table-wrapper">
     <table>
       <thead>
@@ -168,33 +240,42 @@
       <tbody id="tbody"></tbody>
     </table>
   </div>
+
 </main>
 
 <div class="toast" id="toast"></div>
 
+<!-- ===== SCRIPT ===== -->
 <script>
+/* ─── Config ─────────────────────────────────────────────── */
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyRX3NSAotb7Zjh5ESN4cDpj79mKW2EHyuE68cdiqvuzZeqjduvy4PKAL-Qx6h9Gp0c/exec";
 
-let tasks = [], users = [], filterSt = 'all', myChart = null;
-let userRole = 'guest'; 
+let tasks   = [];
+let users   = [];
+let filterSt = 'all';
+let myChart  = null;
+let userRole = 'guest';
 
-const ST_NEXT  = { todo: 'doing', doing: 'done', done: 'todo' };
-const ST_LABEL = { todo: 'ລໍຖ້າ', doing: 'ດຳເນີນຢູ່', done: 'ສຳເລັດ' };
-const ST_CLS   = { todo: 'b-todo', doing: 'b-doing', done: 'b-done' };
-const PRIO_CLS = { h: 'p-high', m: 'p-mid', l: 'p-low' };
-const MV_LBL   = { todo: '▶ ເລີ່ມ', doing: '✓ ສຳເລັດ', done: '↺ ຣີເຊັດ' };
-const MV_CLS   = { todo: 'btn-go', doing: 'btn-accent', done: '' };
-const PRIO_LABEL = { h: '🔥 ຮີບດ່ວນ', m: '⚡ ປານກາງ', l: '💤 ຕໍ່າ' };
+/* ─── Lookup Maps ─────────────────────────────────────────── */
+const ST_NEXT  = { todo:'doing', doing:'done', done:'todo' };
+const ST_LABEL = { todo:'ລໍຖ້າ', doing:'ດຳເນີນຢູ່', done:'ສຳເລັດ' };
+const ST_CLS   = { todo:'b-todo', doing:'b-doing', done:'b-done' };
+const PRIO_CLS   = { h:'p-high', m:'p-mid', l:'p-low' };
+const MV_LBL     = { todo:'▶ ເລີ່ມ', doing:'✓ ສຳເລັດ', done:'↺ ຣີເຊັດ' };
+const MV_CLS     = { todo:'btn-go', doing:'btn-accent', done:'' };
+const PRIO_LABEL = { h:'🔥 ຮີບດ່ວນ', m:'⚡ ປານກາງ', l:'💤 ຕໍ່າ' };
 
+/* ─── Auth ───────────────────────────────────────────────── */
 function handleLogin() {
-  const u = document.getElementById('userInput').value.trim();
-  const p = document.getElementById('passInput').value;
+  const u   = document.getElementById('userInput').value.trim();
+  const p   = document.getElementById('passInput').value;
   const msg = document.getElementById('login-msg');
-  let role = '';
-  if (u === 'admin' && p === '1234') role = 'admin';
+  let role  = '';
+  if      (u === 'admin' && p === '1234') role = 'admin';
   else if (u === 'guest' && p === '1111') role = 'guest';
   else { msg.style.display = 'block'; return; }
-  localStorage.setItem('userRole', role);
+  msg.style.display = 'none';
+  localStorage.setItem('userRole',   role);
   localStorage.setItem('isLoggedIn', 'true');
   userRole = role;
   startApp();
@@ -202,7 +283,7 @@ function handleLogin() {
 
 function checkPreviousLogin() {
   const isLoggedIn = localStorage.getItem('isLoggedIn');
-  const savedRole = localStorage.getItem('userRole');
+  const savedRole  = localStorage.getItem('userRole');
   if (isLoggedIn === 'true' && savedRole) {
     userRole = savedRole;
     startApp();
@@ -210,7 +291,7 @@ function checkPreviousLogin() {
 }
 
 function logout() {
-  if(confirm("ທ່ານຕ້ອງການອອກຈາກລະບົບແທ້ບໍ?")) {
+  if (confirm("ທ່ານຕ້ອງການອອກຈາກລະບົບແທ້ບໍ?")) {
     localStorage.clear();
     location.reload();
   }
@@ -219,170 +300,52 @@ function logout() {
 function startApp() {
   document.getElementById('login-overlay').style.display = 'none';
   document.getElementById('user-tag').textContent = userRole.toUpperCase();
-  if(userRole === 'admin') document.getElementById('admin-form').style.display = 'grid';
+  if (userRole === 'admin') document.getElementById('admin-form').style.display = 'grid';
   loadFromSheet();
 }
 
+/* ─── Data: Load / Save ──────────────────────────────────── */
 async function loadFromSheet() {
   const dot = document.getElementById('sync-dot');
   dot.className = 'sync-dot loading';
+  document.getElementById('sync-text').textContent = 'ກຳລັງໂຫຼດ...';
   try {
-    const res = await fetch(SCRIPT_URL + "?t=" + Date.now(), { redirect: 'follow' });
+    const res  = await fetch(SCRIPT_URL + "?t=" + Date.now(), { redirect: 'follow' });
     const data = await res.json();
-    tasks = data.tasks.map(t => ({...t, id: Number(t.id)})).filter(t => t.name);
-    users = data.users;
+    tasks = data.tasks.map(t => ({ ...t, id: Number(t.id) })).filter(t => t.name);
+    users = data.users || [];
+
+    /* populate assignee dropdown */
     const select = document.getElementById('fAssign');
     select.innerHTML = '<option value="ບໍ່ລະບຸ">-- ເລືອກຜູ້ຮັບຜິດຊອບ --</option>';
     users.forEach(u => {
       const opt = document.createElement('option');
-      opt.value = u.name; opt.textContent = u.name;
+      opt.value       = u.name;
+      opt.textContent = u.name;
       select.appendChild(opt);
     });
+
     dot.className = 'sync-dot ok';
-    document.getElementById('sync-text').textContent = "Sync ສຳເລັດ";
+    document.getElementById('sync-text').textContent = 'Sync ສຳເລັດ';
     document.getElementById('sync-time').textContent = new Date().toLocaleTimeString('lo-LA');
     render();
-  } catch(e) { 
-    dot.className = 'sync-dot err'; 
+  } catch (e) {
+    dot.className = 'sync-dot';
+    document.getElementById('sync-text').textContent = 'ເຊື່ອມຕໍ່ບໍ່ໄດ້!';
     showToast("ເຊື່ອມຕໍ່ຂໍ້ມູນຜິດພາດ!");
   }
 }
 
 async function saveToSheet() {
-  await fetch(SCRIPT_URL, { method: 'POST', redirect: 'follow', body: JSON.stringify(tasks) });
-  showToast("ບັນທຶກຂໍ້ມູນສຳເລັດ!");
+  try {
+    await fetch(SCRIPT_URL, { method:'POST', redirect:'follow', body:JSON.stringify(tasks) });
+    showToast("ບັນທຶກຂໍ້ມູນສຳເລັດ!");
+  } catch (e) {
+    showToast("ບັນທຶກຂໍ້ມູນຜິດພາດ!");
+  }
 }
 
-function updateChart() {
-  const ctx = document.getElementById('performanceChart').getContext('2d');
-  const userList = [...new Set(tasks.map(t => t.assignee))];
-  const doneData = userList.map(u => tasks.filter(t => t.assignee === u && t.status === 'done').length);
-  const pendingData = userList.map(u => tasks.filter(t => t.assignee === u && t.status !== 'done').length);
-  const pendingDetails = userList.map(u => {
-    const list = tasks.filter(t => t.assignee === u && t.status !== 'done');
-    return list.length === 0 ? 'ບໍ່ມີວຽກຄ້າງ' : list.map(t => `• ${t.name}`).join('\n');
-  });
-  if(myChart) myChart.destroy();
-  myChart = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: userList,
-      datasets: [
-        { label: 'ວຽກຄ້າງ', data: pendingData, backgroundColor: '#ff4d4d', details: pendingDetails },
-        { label: 'ວຽກສຳເລັດ', data: doneData, backgroundColor: '#2d6a4f' }
-      ]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1 } } },
-      plugins: {
-        tooltip: {
-          callbacks: {
-            afterLabel: function(context) {
-              if (context.dataset.label === 'ວຽກຄ້າງ') {
-                return '\nລາຍຊື່ວຽກຄ້າງ:\n' + context.dataset.details[context.dataIndex];
-              }
-            }
-          },
-          bodyFont: { family: 'Noto Sans Lao' },
-          titleFont: { family: 'Noto Sans Lao' }
-        }
-      }
-    }
-  });
-}
-
-function render() {
-  updateChart();
-  const q = document.getElementById('searchInput').value.toLowerCase();
-  const ds = document.getElementById('dateStart').value;
-  const de = document.getElementById('dateEnd').value;
-
-  // ສ່ວນສະແດງ Stats (ຕ້ອງມີເພື່ອໃຫ້ຕົວເລກດ້ານເທິງສະແດງຜົນ)
-  const tot = tasks.length, dn = tasks.filter(t => t.status === 'done').length;
-  const pct = tot ? Math.round((dn / tot) * 100) : 0;
-  
-  document.getElementById('stats-grid').innerHTML = `
-    <div class="stat-card"><b style="color:#1a4d8f">${tot}</b><p>ວຽກທັງໝົດ</p></div>
-    <div class="stat-card"><b style="color:#7a4f0a">${tasks.filter(t=>t.status==='doing').length}</b><p>ກຳລັງເຮັດ</p></div>
-    <div class="stat-card"><b style="color:var(--accent)">${dn}</b><p>ສຳເລັດ</p></div>`;
-  
-  document.getElementById('prog-fill').style.width = pct + '%';
-  document.getElementById('prog-pct').textContent = pct + '%';
-
-  // Tabs Counter (ປຸ່ມກອງສະຖານະດ້ານເທິງຕາຕະລາງ)
-  const tabData = [['all','ທັງໝົດ', tot], ['todo','ລໍຖ້າ', tasks.filter(t=>t.status==='todo').length], ['doing','ດຳເນີນ', tasks.filter(t=>t.status==='doing').length], ['done','ສຳເລັດ', dn]];
-  document.getElementById('statusFilters').innerHTML = tabData.map(([f,l,c]) => 
-    `<button class="fp${filterSt===f?' on':''}" onclick="filterSt='${f}';render()">${l} <span class="cb">${c}</span></button>`).join('');
-
-  // ສ່ວນຕາຕະລາງທີ່ເຈົ້າປັບປຸງ (Reverse ຂໍ້ມູນ)
-  document.getElementById('tbody').innerHTML = tasks
-    .filter(t => {
-      const matchSearch = t.name.toLowerCase().includes(q) || (t.assignee || "").toLowerCase().includes(q);
-      const matchStatus = filterSt === 'all' || t.status === filterSt;
-      let matchDate = true;
-      if (ds && de) matchDate = t.assigned >= ds && t.assigned <= de;
-      return matchSearch && matchStatus && matchDate;
-    })
-    .reverse() // ປີ້ນລຳດັບໃຫ້ວຽກໃໝ່ຢູ່ເທິງ
-    .map((t, i, arr) => {
-      // ໄລ່ເລກລຳດັບໃຫ້ຖືກຕ້ອງ (ຖ້າ reverse ແລ້ວ ໃຫ້ເລກໃຫຍ່ຢູ່ເທິງ)
-      const displayIndex = arr.length - i; 
-
-      const actions = userRole === 'admin' ? `
-        <td style="display:flex; gap:4px;">
-          <button class="btn btn-sm ${MV_CLS[t.status]}" onclick="moveTask(${t.id})">${MV_LBL[t.status]}</button>
-          <button class="btn btn-sm btn-wa" onclick="sendWA(${t.id})">WA</button>
-          <button class="btn btn-sm btn-danger" onclick="delTask(${t.id})" title="ລຶບ">ລຶບ</button>
-        </td>` : `<td>🔒 View Only</td>`;
-
-      return `<tr>
-        <td style="color:#888; font-family: 'DM Mono'">${displayIndex}</td>
-        <td><b style="color:#111">${t.name}</b></td>
-        <td style="font-weight:500">${t.assignee}</td>
-        <td>${fmtDate(t.assigned)}</td>
-        <td>${fmtDate(t.due)}</td>
-        <td style="color:var(--accent); font-weight:600">${fmtDate(t.completed_at)}</td>
-        <td><span class="badge ${PRIO_CLS[t.prio] || 'b-todo'}">${PRIO_LABEL[t.prio] || t.prio}</span></td>
-        <td><span class="badge ${ST_CLS[t.status]}">${ST_LABEL[t.status]}</span></td>
-        ${actions}
-      </tr>`;
-    }).join('');
-}
-
-async function moveTask(id) {
-  const t = tasks.find(x => x.id == id);
-  const next = ST_NEXT[t.status];
-  t.status = next;
-  t.completed_at = next === 'done' ? new Date().toISOString().split('T')[0] : (next === 'todo' ? '' : t.completed_at);
-  render(); await saveToSheet();
-}
-
-async function addTask() {
-  const nEl = document.getElementById('fName'), aEl = document.getElementById('fAssign'), 
-        asEl = document.getElementById('fAssigned'), dEl = document.getElementById('fDue'), pEl = document.getElementById('fPrio');
-  const name = nEl.value.trim();
-  if(!name) return showToast("ໃສ່ຊື່ວຽກກ່ອນ!");
-  tasks.push({ id: Date.now(), name, assignee: aEl.value, assigned: asEl.value, due: dEl.value, completed_at: '', prio: pEl.value, status: 'todo' });
-  render(); await saveToSheet();
-  nEl.value = ''; aEl.value = 'ບໍ່ລະບຸ'; asEl.value = ''; dEl.value = ''; pEl.value = 'm';
-  showToast("ເພີ່ມວຽກສຳເລັດ!");
-}
-
-async function delTask(id) {
-  if(!confirm("ລຶບແທ້ບໍ?")) return;
-  tasks = tasks.filter(t => t.id != id);
-  render(); await saveToSheet();
-}
-
-function sendWA(id) {
-  const t = tasks.find(x => x.id == id);
-  const u = users.find(x => x.name.replace(/\s+/g, '') === t.assignee.replace(/\s+/g, ''));
-  if (!u || !u.phone) return alert("ບໍ່ພົບເບີ WhatsApp ໃນ Sheet2");
-  const msg = `ສະບາຍດີ ${t.assignee},\nທ່ານມີວຽກໃໝ່:\n📌 ວຽກ: ${t.name}\n📅 Deadline: ${fmtDate(t.due)}`;
-  window.open(`https://wa.me/${u.phone}?text=${encodeURIComponent(msg)}`, '_blank');
-}
-
+/* ─── Utility ────────────────────────────────────────────── */
 function fmtDate(d) {
   if (!d || d === '—' || d === 'Invalid Date') return '—';
   const dateStr = String(d).split('T')[0];
@@ -390,20 +353,374 @@ function fmtDate(d) {
   return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : d;
 }
 
-function showToast(m) {
-  const t = document.getElementById('toast'); t.textContent = m; t.className = "toast show";
-  setTimeout(() => t.className = "toast", 2500);
+function toDateObj(d) {
+  if (!d || d === '—') return null;
+  const s = String(d).split('T')[0];
+  const dt = new Date(s);
+  return isNaN(dt.getTime()) ? null : dt;
 }
-checkPreviousLogin();
 
-  // ຕັ້ງເວລາໃຫ້ Refresh ຂໍ້ມູນທຸກໆ 1 ນາທີ (60,000 milliseconds)
-setInterval(() => {
-  // ໃຫ້ໂຫຼດຂໍ້ມູນໃໝ່ສະເພາະຕອນທີ່ Login ເຂົ້າໄປແລ້ວເທົ່ານັ້ນ
-  if (localStorage.getItem('isLoggedIn') === 'true') {
-    console.log("Auto-refreshing data...");
-    loadFromSheet();
+function daysDiff(d1, d2) {
+  /* d2 - d1 in whole days */
+  if (!d1 || !d2) return null;
+  return Math.round((d2.getTime() - d1.getTime()) / 86400000);
+}
+
+function showToast(m) {
+  const t = document.getElementById('toast');
+  t.textContent  = m;
+  t.className    = 'toast show';
+  setTimeout(() => { t.className = 'toast'; }, 2500);
+}
+
+/* ─── Person Stats Computation (NEW) ────────────────────── */
+function computePersonStats() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  /* get unique assignees (excluding blank / ບໍ່ລະບຸ) */
+  const names = [...new Set(tasks.map(t => t.assignee).filter(a => a && a !== 'ບໍ່ລະບຸ'))];
+
+  return names.map(name => {
+    const myTasks = tasks.filter(t => t.assignee === name);
+
+    const done    = myTasks.filter(t => t.status === 'done');
+    const pending = myTasks.filter(t => t.status !== 'done');
+
+    /* Completed on-time: done AND completed_at <= due (both must exist) */
+    const onTime = done.filter(t => {
+      const ca  = toDateObj(t.completed_at);
+      const due = toDateObj(t.due);
+      if (!ca || !due) return false;
+      return ca <= due;
+    });
+
+    /* Completed late: done AND completed_at > due */
+    const late = done.filter(t => {
+      const ca  = toDateObj(t.completed_at);
+      const due = toDateObj(t.due);
+      if (!ca || !due) return false;
+      return ca > due;
+    });
+
+    /* For late tasks: calc days late per task */
+    const lateDays = late.map(t => {
+      const ca  = toDateObj(t.completed_at);
+      const due = toDateObj(t.due);
+      return daysDiff(due, ca); /* positive = how many days after deadline */
+    }).filter(x => x !== null);
+
+    const avgLateDays = lateDays.length
+      ? Math.round(lateDays.reduce((a, b) => a + b, 0) / lateDays.length)
+      : 0;
+    const maxLateDays = lateDays.length ? Math.max(...lateDays) : 0;
+
+    /* Pending overdue: not done AND due < today — include days overdue */
+    const overdueList = pending
+      .filter(t => { const due = toDateObj(t.due); return due && due < today; })
+      .map(t => {
+        const due = toDateObj(t.due);
+        return { name: t.name, days: daysDiff(due, today) };
+      })
+      .sort((a, b) => b.days - a.days); /* worst first */
+
+    return {
+      name,
+      total:        myTasks.length,
+      done:         done.length,
+      onTime:       onTime.length,
+      late:         late.length,
+      avgLateDays,
+      maxLateDays,
+      pending:      pending.length,
+      overdue:      overdueList.length,
+      overdueList,
+    };
+  })
+  /* Sort: most pending first, then most late first */
+  .sort((a, b) => b.pending - a.pending || b.late - a.late);
+}
+
+/* ─── Person Stats Panel Render (NEW) ───────────────────── */
+function renderPersonPanel() {
+  const panel = document.getElementById('person-stats-panel');
+  const stats = computePersonStats();
+
+  if (!stats.length) {
+    panel.innerHTML = '<div class="no-task-msg">ຍັງບໍ່ມີຂໍ້ມູນ</div>';
+    return;
   }
-}, 300000);
+
+  panel.innerHTML = stats.map((s, i) => {
+    const rankClass = i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : 'rank-other';
+    const rankIcon  = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1);
+
+    const lateBlock = s.late > 0
+      ? `<div class="late-detail">⏰ ລ່າຊ້າ avg <b>${s.avgLateDays}</b> ມື້ · max <b>${s.maxLateDays}</b> ມື້</div>`
+      : '';
+
+    const overdueBlock = s.overdueList.length > 0
+      ? `<div class="overdue-detail">
+           <div style="font-weight:700;margin-bottom:4px;">⚠️ ຄ້າງເກີນກຳນົດ ${s.overdueList.length} ວຽກ:</div>
+           ${s.overdueList.map(o =>
+             `<div style="display:flex;justify-content:space-between;align-items:center;padding:2px 0;border-top:1px solid #fae7cb;">
+               <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${o.name}</span>
+               <span style="flex-shrink:0;margin-left:8px;font-weight:800;color:#c0392b;">+${o.days} ມື້</span>
+             </div>`
+           ).join('')}
+         </div>`
+      : '';
+
+    return `
+      <div class="person-card">
+        <div class="person-card-top">
+          <div class="rank-badge ${rankClass}">${rankIcon}</div>
+          <div class="person-name">${s.name}</div>
+          <div class="person-total">ທັງໝົດ ${s.total}</div>
+        </div>
+        <div class="person-stats-grid">
+          <div class="psg-item psg-ontime">
+            <b>${s.onTime}</b>
+            <span>ທັນກຳນົດ</span>
+          </div>
+          <div class="psg-item psg-late">
+            <b>${s.late}</b>
+            <span>ລ່າຊ້າ</span>
+          </div>
+          <div class="psg-item psg-pending">
+            <b>${s.pending}</b>
+            <span>ຄ້າງ</span>
+          </div>
+        </div>
+        ${lateBlock}
+        ${overdueBlock}
+      </div>`;
+  }).join('');
+}
+
+/* ─── Bar Chart ──────────────────────────────────────────── */
+function updateChart() {
+  const ctx      = document.getElementById('performanceChart').getContext('2d');
+  const stats    = computePersonStats(); /* reuse sorted stats */
+  const userList = stats.map(s => s.name);
+
+  const doneData    = stats.map(s => s.done);
+  const pendingData = stats.map(s => s.pending);
+
+  /* build tooltip details for pending */
+  const pendingDetails = userList.map(name => {
+    const list = tasks.filter(t => t.assignee === name && t.status !== 'done');
+    return list.length === 0 ? 'ບໍ່ມີວຽກຄ້າງ' : list.map(t => `• ${t.name}`).join('\n');
+  });
+
+  if (myChart) {
+    myChart.destroy();
+    myChart = null;
+  }
+
+  if (!userList.length) return;
+
+  myChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: userList,
+      datasets: [
+        {
+          label:           'ວຽກຄ້າງ',
+          data:            pendingData,
+          backgroundColor: '#ff6b6b',
+          borderRadius:    4,
+          details:         pendingDetails,
+        },
+        {
+          label:           'ວຽກສຳເລັດ',
+          data:            doneData,
+          backgroundColor: '#2d6a4f',
+          borderRadius:    4,
+        },
+      ],
+    },
+    options: {
+      responsive:          true,
+      maintainAspectRatio: false,
+      layout: {
+        padding: { top: 8, right: 12, bottom: 0, left: 0 },
+      },
+      scales: {
+        x: {
+          stacked: true,
+          ticks: {
+            font: { family: 'Noto Sans Lao', size: 11 },
+            maxRotation: 30,
+            autoSkip: false,
+          },
+          grid: { display: false },
+        },
+        y: {
+          stacked: true,
+          beginAtZero: true,
+          ticks: {
+            stepSize: 1,
+            font: { family: 'Noto Sans Lao', size: 11 },
+            precision: 0,
+          },
+          grid: { color: '#f0ede8' },
+        },
+      },
+      plugins: {
+        legend: {
+          position: 'top',
+          align: 'end',
+          labels: {
+            font: { family: 'Noto Sans Lao', size: 11 },
+            boxWidth: 12,
+            boxHeight: 12,
+            padding: 12,
+          },
+        },
+        tooltip: {
+          callbacks: {
+            afterLabel: function(context) {
+              if (context.dataset.label === 'ວຽກຄ້າງ') {
+                return '\nລາຍຊື່ວຽກຄ້າງ:\n' + context.dataset.details[context.dataIndex];
+              }
+            },
+          },
+          bodyFont:  { family: 'Noto Sans Lao', size: 12 },
+          titleFont: { family: 'Noto Sans Lao', size: 12 },
+          padding:   10,
+        },
+      },
+    },
+  });
+}
+
+/* ─── Main Render ────────────────────────────────────────── */
+function render() {
+  /* stats cards */
+  const tot = tasks.length;
+  const dn  = tasks.filter(t => t.status === 'done').length;
+  const pct = tot ? Math.round((dn / tot) * 100) : 0;
+
+  document.getElementById('stats-grid').innerHTML = `
+    <div class="stat-card"><b style="color:#1a4d8f">${tot}</b><p>ວຽກທັງໝົດ</p></div>
+    <div class="stat-card"><b style="color:#7a4f0a">${tasks.filter(t => t.status === 'doing').length}</b><p>ກຳລັງເຮັດ</p></div>
+    <div class="stat-card"><b style="color:var(--accent)">${dn}</b><p>ສຳເລັດ</p></div>`;
+
+  /* progress */
+  document.getElementById('prog-fill').style.width = pct + '%';
+  document.getElementById('prog-pct').textContent  = pct + '%';
+
+  /* status filter tabs */
+  const tabData = [
+    ['all',   'ທັງໝົດ', tot],
+    ['todo',  'ລໍຖ້າ',  tasks.filter(t => t.status === 'todo').length],
+    ['doing', 'ດຳເນີນ', tasks.filter(t => t.status === 'doing').length],
+    ['done',  'ສຳເລັດ', dn],
+  ];
+  document.getElementById('statusFilters').innerHTML = tabData
+    .map(([f, l, c]) =>
+      `<button class="fp${filterSt === f ? ' on' : ''}" onclick="filterSt='${f}';render()">` +
+      `${l} <span class="cb">${c}</span></button>`)
+    .join('');
+
+  /* chart + person panel */
+  updateChart();
+  renderPersonPanel();
+
+  /* table */
+  const q  = (document.getElementById('searchInput').value || '').toLowerCase();
+  const ds = document.getElementById('dateStart').value;
+  const de = document.getElementById('dateEnd').value;
+
+  document.getElementById('tbody').innerHTML = tasks
+    .filter(t => {
+      const matchSearch = t.name.toLowerCase().includes(q) ||
+                          (t.assignee || '').toLowerCase().includes(q);
+      const matchStatus = filterSt === 'all' || t.status === filterSt;
+      let matchDate = true;
+      if (ds && de) matchDate = t.assigned >= ds && t.assigned <= de;
+      return matchSearch && matchStatus && matchDate;
+    })
+    .map((t, i) => {
+      const actions = userRole === 'admin'
+        ? `<td style="display:flex;gap:6px;">
+             <button class="btn btn-sm ${MV_CLS[t.status]}" onclick="moveTask(${t.id})">${MV_LBL[t.status]}</button>
+             <button class="btn btn-sm btn-wa" onclick="sendWA(${t.id})">WA</button>
+             <button class="btn btn-sm btn-danger" onclick="delTask(${t.id})" title="ລຶບ">ລຶບ</button>
+           </td>`
+        : `<td>🔒 View Only</td>`;
+
+      return `<tr>
+        <td style="color:#888;font-family:'DM Mono'">${i + 1}</td>
+        <td><b style="color:#111">${t.name}</b></td>
+        <td style="font-weight:500">${t.assignee}</td>
+        <td>${fmtDate(t.assigned)}</td>
+        <td>${fmtDate(t.due)}</td>
+        <td style="color:var(--accent);font-weight:600">${fmtDate(t.completed_at)}</td>
+        <td><span class="badge ${PRIO_CLS[t.prio] || 'b-todo'}">${PRIO_LABEL[t.prio] || t.prio}</span></td>
+        <td><span class="badge ${ST_CLS[t.status]}">${ST_LABEL[t.status]}</span></td>
+        ${actions}
+      </tr>`;
+    })
+    .join('');
+}
+
+/* ─── Task Actions ───────────────────────────────────────── */
+async function moveTask(id) {
+  const t = tasks.find(x => x.id === id);
+  if (!t) return;
+  const next  = ST_NEXT[t.status];
+  t.status    = next;
+  t.completed_at = next === 'done'
+    ? new Date().toISOString().split('T')[0]
+    : (next === 'todo' ? '' : t.completed_at);
+  render();
+  await saveToSheet();
+}
+
+async function addTask() {
+  const nEl  = document.getElementById('fName');
+  const aEl  = document.getElementById('fAssign');
+  const asEl = document.getElementById('fAssigned');
+  const dEl  = document.getElementById('fDue');
+  const pEl  = document.getElementById('fPrio');
+  const name = nEl.value.trim();
+  if (!name) return showToast("ໃສ່ຊື່ວຽກກ່ອນ!");
+  tasks.push({
+    id:           Date.now(),
+    name,
+    assignee:     aEl.value,
+    assigned:     asEl.value,
+    due:          dEl.value,
+    completed_at: '',
+    prio:         pEl.value,
+    status:       'todo',
+  });
+  render();
+  await saveToSheet();
+  nEl.value = ''; aEl.value = 'ບໍ່ລະບຸ'; asEl.value = ''; dEl.value = ''; pEl.value = 'm';
+  showToast("ເພີ່ມວຽກສຳເລັດ!");
+}
+
+async function delTask(id) {
+  if (!confirm("ລຶບແທ້ບໍ?")) return;
+  tasks = tasks.filter(t => t.id !== id);
+  render();
+  await saveToSheet();
+}
+
+function sendWA(id) {
+  const t = tasks.find(x => x.id === id);
+  if (!t) return;
+  const u = users.find(x => x.name.replace(/\s+/g, '') === (t.assignee || '').replace(/\s+/g, ''));
+  if (!u || !u.phone) return alert("ບໍ່ພົບເບີ WhatsApp ໃນ Sheet2");
+  const msg = `ສະບາຍດີ ${t.assignee},\nທ່ານມີວຽກໃໝ່:\n📌 ວຽກ: ${t.name}\n📅 Deadline: ${fmtDate(t.due)}`;
+  window.open(`https://wa.me/${u.phone}?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
+/* ─── Boot ───────────────────────────────────────────────── */
+checkPreviousLogin();
 </script>
 </body>
 </html>
