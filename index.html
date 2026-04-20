@@ -218,7 +218,7 @@
   <div id="admin-form" class="form-grid">
     <div class="fg"><label>ຊື່ວຽກ *</label><input id="fName" placeholder="ພິມຊື່ວຽກ..."/></div>
     <div class="fg">
-      <label>ຜູ້ຮັບຜິດຊອບ <span style="font-weight:400;color:#aaa;">(ເລືອກໄດ້ຫຼາຍຄົນ)</span></label>
+      <label>ຜູ້ຮັບຜິດຊອບ <span style="font-weight:400;color:#aaa;">(ເລືອກໄດ້ຫຼາຍຄົນ — ສ້າງວຽກລາຍຄົນ)</span> <span id="task-preview-badge" style="display:none;background:#2d6a4f;color:#fff;font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;"></span></label>
       <div class="ms-wrap" id="assignWrap">
         <div class="ms-input" id="assignInput" onclick="toggleAssignDD(event)">
           <span class="ms-placeholder" id="assignPH">-- ເລືອກຜູ້ຮັບຜິດຊອບ --</span>
@@ -722,6 +722,7 @@ function refreshAssignTags() {
   const checked  = [...document.querySelectorAll('#assignOpts input:checked')];
   const tagsEl   = document.getElementById('assignTags');
   const ph       = document.getElementById('assignPH');
+  const badge    = document.getElementById('task-preview-badge');
   /* update .checked class on rows */
   document.querySelectorAll('#assignOpts .ms-opt').forEach(row => {
     row.classList.toggle('checked', row.querySelector('input').checked);
@@ -729,6 +730,7 @@ function refreshAssignTags() {
   if (checked.length === 0) {
     ph.style.display = '';
     tagsEl.innerHTML = '';
+    if (badge) { badge.style.display = 'none'; }
   } else {
     ph.style.display = 'none';
     tagsEl.innerHTML = checked.map(cb =>
@@ -736,6 +738,12 @@ function refreshAssignTags() {
          <span class="ms-tag-x" onclick="removeAssignee(event,'${cb.value}')">×</span>
        </span>`
     ).join('');
+    if (badge) {
+      badge.style.display = '';
+      badge.textContent = checked.length > 1
+        ? `→ ສ້າງ ${checked.length} ວຽກ (1 ຄົນ / 1 ວຽກ)`
+        : `→ ສ້າງ 1 ວຽກ`;
+    }
   }
 }
 
@@ -783,23 +791,47 @@ async function addTask() {
   const pEl  = document.getElementById('fPrio');
   const name = nEl.value.trim();
   if (!name) return showToast("ໃສ່ຊື່ວຽກກ່ອນ!");
-  const selected   = getSelectedAssignees();
-  const assigneeStr = selected.length > 0 ? selected.join(', ') : 'ບໍ່ລະບຸ';
-  tasks.push({
-    id:           Date.now(),
-    name,
-    assignee:     assigneeStr,
-    assigned:     asEl.value,
-    due:          dEl.value,
-    completed_at: '',
-    prio:         pEl.value,
-    status:       'todo',
-  });
+
+  const selected = getSelectedAssignees();
+
+  if (selected.length === 0) {
+    /* No assignee selected: add one task with 'ບໍ່ລະບຸ' */
+    tasks.push({
+      id:           Date.now(),
+      name,
+      assignee:     'ບໍ່ລະບຸ',
+      assigned:     asEl.value,
+      due:          dEl.value,
+      completed_at: '',
+      prio:         pEl.value,
+      status:       'todo',
+    });
+  } else {
+    /* Multiple assignees: create a SEPARATE task for each person */
+    const baseId = Date.now();
+    selected.forEach((personName, idx) => {
+      tasks.push({
+        id:           baseId + idx,        // unique id per person
+        name,                              // same task name
+        assignee:     personName,          // only THIS person
+        assigned:     asEl.value,
+        due:          dEl.value,
+        completed_at: '',
+        prio:         pEl.value,
+        status:       'todo',
+      });
+    });
+  }
+
   render();
   await saveToSheet();
   nEl.value = ''; asEl.value = ''; dEl.value = ''; pEl.value = 'm';
   clearAssignDD();
-  showToast("ເພີ່ມວຽກສຳເລັດ!");
+
+  const msg = selected.length > 1
+    ? `ເພີ່ມວຽກສຳເລັດ! (${selected.length} ຄົນ × 1 ວຽກ = ${selected.length} ລາຍການ)`
+    : "ເພີ່ມວຽກສຳເລັດ!";
+  showToast(msg);
 }
 
 async function delTask(id) {
