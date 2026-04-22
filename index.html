@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Task Tracker R&D Center</title>
+<title>Task Tracker R&D — Professional Version</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
@@ -59,13 +59,15 @@
   .rank-other{background:#eef4fb;color:#1a4d8f;}
   .person-name{font-weight:700;font-size:13px;color:#1c1a17;flex:1;}
   .person-total{font-size:10px;color:#7a7670;background:#f0ede8;padding:2px 8px;border-radius:10px;}
-  .person-stats-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;}
+  .person-stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
   .psg-item{background:#f8f9fa;border-radius:8px;padding:7px 8px;text-align:center;}
   .psg-item b{display:block;font-size:16px;font-weight:800;line-height:1.2;}
   .psg-item span{font-size:9px;color:#7a7670;font-weight:600;text-transform:uppercase;letter-spacing:0.3px;}
   .psg-ontime b{color:#2d6a4f;}
   .psg-late b{color:#c0392b;}
   .psg-pending b{color:#7a4f0a;}
+  .psg-incomplete b{color:#b8860b;}
+  .psg-incomplete{background:#fffbea;border:1px solid #f0d060;}
   .late-detail{margin-top:7px;font-size:10px;color:#c0392b;background:#fff5f5;border:1px solid #fce4e4;border-radius:6px;padding:5px 8px;}
   .overdue-detail{margin-top:5px;font-size:10px;color:#7a4f0a;background:#fef5e7;border:1px solid #fae7cb;border-radius:6px;padding:5px 8px;}
   .no-task-msg{text-align:center;padding:30px;color:#aaa;font-size:12px;}
@@ -128,6 +130,7 @@
   .b-todo{background:#eef4fb;color:#1a4d8f;border:1px solid #d0e1f5;}
   .b-doing{background:#fef5e7;color:#7a4f0a;border:1px solid #fae7cb;}
   .b-done{background:var(--accent-lt);color:var(--accent);border:1px solid #c9e6d5;}
+  .b-incomplete{background:#fffbea;color:#b8860b;border:1px solid #f0d060;}
   .p-high{background:#fff0f0;color:#d63031;}
   .p-mid{background:#fef5e7;color:#7a4f0a;}
   .p-low{background:#eef4fb;color:#1a4d8f;}
@@ -163,7 +166,7 @@
 <header class="header">
   <div style="display:flex;align-items:center;gap:10px;">
     <span style="font-size:24px;">📝</span>
-    <b style="font-size:16px;">ກະດານຕິດຕາມວຽກ R&D Center</b>
+    <b style="font-size:16px;">ກະດານຕິດຕາມວຽກ R&amp;D</b>
     <span id="user-tag" style="font-size:10px;background:#eee;padding:2px 8px;border-radius:4px;margin-left:5px;font-weight:700;color:#555;"></span>
   </div>
   <div style="display:flex;gap:8px;">
@@ -290,12 +293,12 @@ let myChart  = null;
 let userRole = 'guest';
 
 /* ─── Lookup Maps ─────────────────────────────────────────── */
-const ST_NEXT  = { todo:'doing', doing:'done', done:'todo' };
-const ST_LABEL = { todo:'ລໍຖ້າ', doing:'ດຳເນີນຢູ່', done:'ສຳເລັດ' };
-const ST_CLS   = { todo:'b-todo', doing:'b-doing', done:'b-done' };
+const ST_NEXT  = { todo:'doing', doing:'done', done:'todo', incomplete:'todo' };
+const ST_LABEL = { todo:'ລໍຖ້າ', doing:'ດຳເນີນຢູ່', done:'ສຳເລັດ', incomplete:'ບໍ່ສຳເລັດ' };
+const ST_CLS   = { todo:'b-todo', doing:'b-doing', done:'b-done', incomplete:'b-incomplete' };
 const PRIO_CLS   = { h:'p-high', m:'p-mid', l:'p-low' };
-const MV_LBL     = { todo:'▶ ເລີ່ມ', doing:'✓ ສຳເລັດ', done:'↺ ຣີເຊັດ' };
-const MV_CLS     = { todo:'btn-go', doing:'btn-accent', done:'' };
+const MV_LBL     = { todo:'▶ ເລີ່ມ', doing:'✓ ສຳເລັດ', done:'↺ ຣີເຊັດ', incomplete:'↺ ຣີເຊັດ' };
+const MV_CLS     = { todo:'btn-go', doing:'btn-accent', done:'', incomplete:'' };
 const PRIO_LABEL = { h:'🔥 ຮີບດ່ວນ', m:'⚡ ປານກາງ', l:'💤 ຕໍ່າ' };
 
 /* ─── Auth ───────────────────────────────────────────────── */
@@ -335,9 +338,6 @@ function startApp() {
   document.getElementById('user-tag').textContent = userRole.toUpperCase();
   if (userRole === 'admin') document.getElementById('admin-form').style.display = 'grid';
   loadFromSheet();
-    setInterval(() => {
-  loadFromSheet();
-}, 5 * 60 * 1000);
 }
 
 /* ─── Data: Load / Save ──────────────────────────────────── */
@@ -419,8 +419,10 @@ function computePersonStats() {
     /* a task belongs to this person if their name is in the comma list */
     const myTasks = tasks.filter(t => splitAssignees(t.assignee).includes(name));
 
-    const done    = myTasks.filter(t => t.status === 'done');
-    const pending = myTasks.filter(t => t.status !== 'done');
+    const done       = myTasks.filter(t => t.status === 'done');
+    const incomplete = myTasks.filter(t => t.status === 'incomplete');
+    /* pending = ວຽກທີ່ຍັງບໍ່ສຳເລັດ ແລະ ຍັງບໍ່ຖືກ mark ເປັນ incomplete */
+    const pending    = myTasks.filter(t => t.status === 'todo' || t.status === 'doing');
 
     /* Completed on-time: done AND completed_at <= due (both must exist) */
     const onTime = done.filter(t => {
@@ -468,6 +470,8 @@ function computePersonStats() {
       avgLateDays,
       maxLateDays,
       pending:      pending.length,
+      onTrackPending: pending.length,   /* alias — pending is already on-track */
+      incomplete:   incomplete.length,  /* manually marked by admin */
       overdue:      overdueList.length,
       overdueList,
     };
@@ -523,8 +527,12 @@ function renderPersonPanel() {
             <span>ລ່າຊ້າ</span>
           </div>
           <div class="psg-item psg-pending">
-            <b>${s.pending}</b>
+            <b>${s.onTrackPending}</b>
             <span>ຄ້າງ</span>
+          </div>
+          <div class="psg-item psg-incomplete">
+            <b>${s.incomplete}</b>
+            <span>ບໍ່ສຳເລັດ</span>
           </div>
         </div>
         ${lateBlock}
@@ -539,13 +547,27 @@ function updateChart() {
   const stats    = computePersonStats(); /* reuse sorted stats */
   const userList = stats.map(s => s.name);
 
-  const doneData    = stats.map(s => s.done);
-  const pendingData = stats.map(s => s.pending);
+  const doneData       = stats.map(s => s.done);
+  const onTrackData    = stats.map(s => s.pending);       /* ວຽກຄ້າງ (todo/doing) */
+  const incompleteData = stats.map(s => s.incomplete);    /* ວຽກບໍ່ສຳເລັດ (admin marked) */
 
-  /* build tooltip details for pending */
-  const pendingDetails = userList.map(name => {
-    const list = tasks.filter(t => splitAssignees(t.assignee).includes(name) && t.status !== 'done');
+  /* build tooltip details per dataset */
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  const onTrackDetails = userList.map(name => {
+    const list = tasks.filter(t =>
+      splitAssignees(t.assignee).includes(name) &&
+      (t.status === 'todo' || t.status === 'doing')
+    );
     return list.length === 0 ? 'ບໍ່ມີວຽກຄ້າງ' : list.map(t => `• ${t.name}`).join('\n');
+  });
+
+  const incompleteDetails = userList.map(name => {
+    const list = tasks.filter(t =>
+      splitAssignees(t.assignee).includes(name) && t.status === 'incomplete'
+    );
+    return list.length === 0 ? 'ບໍ່ມີວຽກບໍ່ສຳເລັດ'
+      : list.map(t => `• ${t.name}`).join('\n');
   });
 
   if (myChart) {
@@ -561,11 +583,18 @@ function updateChart() {
       labels: userList,
       datasets: [
         {
+          label:           'ວຽກບໍ່ສຳເລັດ',
+          data:            incompleteData,
+          backgroundColor: '#f5c518',
+          borderRadius:    4,
+          details:         incompleteDetails,
+        },
+        {
           label:           'ວຽກຄ້າງ',
-          data:            pendingData,
+          data:            onTrackData,
           backgroundColor: '#ff6b6b',
           borderRadius:    4,
-          details:         pendingDetails,
+          details:         onTrackDetails,
         },
         {
           label:           'ວຽກສຳເລັດ',
@@ -619,6 +648,9 @@ function updateChart() {
               if (context.dataset.label === 'ວຽກຄ້າງ') {
                 return '\nລາຍຊື່ວຽກຄ້າງ:\n' + context.dataset.details[context.dataIndex];
               }
+              if (context.dataset.label === 'ວຽກບໍ່ສຳເລັດ') {
+                return '\nວຽກເກີນ Deadline:\n' + context.dataset.details[context.dataIndex];
+              }
             },
           },
           bodyFont:  { family: 'Noto Sans Lao', size: 12 },
@@ -637,10 +669,13 @@ function render() {
   const dn  = tasks.filter(t => t.status === 'done').length;
   const pct = tot ? Math.round((dn / tot) * 100) : 0;
 
+  const incompleteCnt = tasks.filter(t => t.status === 'incomplete').length;
+
   document.getElementById('stats-grid').innerHTML = `
     <div class="stat-card"><b style="color:#1a4d8f">${tot}</b><p>ວຽກທັງໝົດ</p></div>
     <div class="stat-card"><b style="color:#7a4f0a">${tasks.filter(t => t.status === 'doing').length}</b><p>ກຳລັງເຮັດ</p></div>
-    <div class="stat-card"><b style="color:var(--accent)">${dn}</b><p>ສຳເລັດ</p></div>`;
+    <div class="stat-card"><b style="color:var(--accent)">${dn}</b><p>ສຳເລັດ</p></div>
+    <div class="stat-card"><b style="color:#b8860b">${incompleteCnt}</b><p>ບໍ່ສຳເລັດ</p></div>`;
 
   /* progress */
   document.getElementById('prog-fill').style.width = pct + '%';
@@ -648,10 +683,11 @@ function render() {
 
   /* status filter tabs */
   const tabData = [
-    ['all',   'ທັງໝົດ', tot],
-    ['todo',  'ລໍຖ້າ',  tasks.filter(t => t.status === 'todo').length],
-    ['doing', 'ດຳເນີນ', tasks.filter(t => t.status === 'doing').length],
-    ['done',  'ສຳເລັດ', dn],
+    ['all',        'ທັງໝົດ',   tot],
+    ['todo',       'ລໍຖ້າ',    tasks.filter(t => t.status === 'todo').length],
+    ['doing',      'ດຳເນີນ',   tasks.filter(t => t.status === 'doing').length],
+    ['done',       'ສຳເລັດ',   dn],
+    ['incomplete', 'ບໍ່ສຳເລັດ', incompleteCnt],
   ];
   document.getElementById('statusFilters').innerHTML = tabData
     .map(([f, l, c]) =>
@@ -678,9 +714,14 @@ function render() {
       return matchSearch && matchStatus && matchDate;
     })
     .map((t, i) => {
+      /* ປຸ່ມ ບໍ່ສຳເລັດ: ຖ້າ status ຍັງບໍ່ແມ່ນ incomplete ໃຫ້ສະແດງ; ຖ້າ incomplete ແລ້ວ ບໍ່ສະແດງ (ໃຊ້ ↺ ຣີເຊັດ ແທນ) */
+      const incBtn = (t.status !== 'incomplete' && t.status !== 'done')
+        ? `<button class="btn btn-sm" style="background:#fffbea;color:#b8860b;border:1px solid #f0d060;" onclick="markIncomplete(${t.id})" title="ໝາຍວ່າບໍ່ສຳເລັດ">⚠️ ບໍ່ສຳເລັດ</button>`
+        : '';
       const actions = userRole === 'admin'
-        ? `<td style="display:flex;gap:6px;">
+        ? `<td style="display:flex;gap:6px;flex-wrap:wrap;">
              <button class="btn btn-sm ${MV_CLS[t.status]}" onclick="moveTask(${t.id})">${MV_LBL[t.status]}</button>
+             ${incBtn}
              <button class="btn btn-sm btn-wa" onclick="sendWA(${t.id})">WA</button>
              <button class="btn btn-sm btn-danger" onclick="delTask(${t.id})" title="ລຶບ">ລຶບ</button>
            </td>`
@@ -785,6 +826,17 @@ async function moveTask(id) {
     : (next === 'todo' ? '' : t.completed_at);
   render();
   await saveToSheet();
+}
+
+async function markIncomplete(id) {
+  const t = tasks.find(x => x.id === id);
+  if (!t) return;
+  if (!confirm(`ໝາຍວ່າ "${t.name}" ເປັນ ວຽກບໍ່ສຳເລັດ ແທ້ບໍ?\n(admin ສາມາດ ↺ ຣີເຊັດ ກັບໄປ ລໍຖ້າ ໄດ້ພາຍຫຼັງ)`)) return;
+  t.status       = 'incomplete';
+  t.completed_at = '';
+  render();
+  await saveToSheet();
+  showToast(`⚠️ ໝາຍວ່າ "${t.name}" ບໍ່ສຳເລັດແລ້ວ`);
 }
 
 async function addTask() {
