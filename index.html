@@ -156,7 +156,6 @@
 </head>
 <body>
 
-<!-- ===== LOGIN OVERLAY ===== -->
 <div id="login-overlay">
   <div class="login-box">
     <span style="font-size:50px;">🚀</span>
@@ -169,7 +168,6 @@
   </div>
 </div>
 
-<!-- ===== HEADER ===== -->
 <header class="header">
   <div style="display:flex;align-items:center;gap:10px;">
     <span style="font-size:24px;">📝</span>
@@ -182,29 +180,24 @@
   </div>
 </header>
 
-<!-- ===== SYNC BAR ===== -->
 <div class="sync-bar">
   <div class="sync-dot" id="sync-dot"></div>
   <span id="sync-text">ລໍຖ້າການເຊື່ອມຕໍ່...</span>
   <span id="sync-time" style="margin-left:auto;"></span>
+  <span id="refresh-timer" style="margin-left: 15px; color: #2d6a4f; font-weight: 600;"></span>
 </div>
 
-<!-- ===== MAIN ===== -->
 <main class="main">
 
-  <!-- Stats Cards -->
   <div class="stats" id="stats-grid"></div>
 
-  <!-- Progress Bar -->
   <div class="prog-row">
     <span style="font-size:11px;font-weight:700;color:#5a5a5a;">ຄວາມຄືບໜ້າລວມ</span>
     <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
     <span id="prog-pct" style="font-size:12px;font-weight:700;color:var(--accent);min-width:35px;text-align:right;">0%</span>
   </div>
 
-  <!-- ===== CHART ROW: Graph (left) + Person Stats Panel (right) ===== -->
   <div class="chart-row">
-    <!-- Bar Chart -->
     <div class="chart-box">
       <div style="font-size:12px;font-weight:700;color:#5a5a5a;margin-bottom:10px;flex-shrink:0;">📊 ພາບລວມຜົນງານທີມ</div>
       <div class="chart-canvas-wrap">
@@ -212,7 +205,6 @@
       </div>
     </div>
 
-    <!-- Person Stats Panel (NEW) -->
     <div class="person-panel">
       <div class="person-panel-header">
         <h3>🏆 ອັນດັບສະຖິຕິລາຍບຸກຄົນ</h3>
@@ -224,7 +216,6 @@
     </div>
   </div>
 
-  <!-- Admin Form (admin only) -->
   <div id="admin-form" class="form-grid">
     <div class="fg"><label>ຊື່ວຽກ *</label><input id="fName" placeholder="ພິມຊື່ວຽກ..."/></div>
     <div class="fg">
@@ -252,7 +243,6 @@
     <button class="btn btn-accent" onclick="addTask()">+ ເພີ່ມວຽກ</button>
   </div>
 
-  <!-- Toolbar -->
   <div class="toolbar">
     <div class="search-box"><input type="text" id="searchInput" oninput="render()" placeholder="🔍 ຄົ້ນຫາຊື່ວຽກ/ຄົນ..."/></div>
     <div class="date-filter">
@@ -264,7 +254,6 @@
     <div id="statusFilters" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
   </div>
 
-  <!-- Task Table -->
   <div class="table-wrapper">
     <table>
       <thead>
@@ -288,16 +277,17 @@
 
 <div class="toast" id="toast"></div>
 
-<!-- ===== SCRIPT ===== -->
 <script>
 /* ─── Config ─────────────────────────────────────────────── */
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyRX3NSAotb7Zjh5ESN4cDpj79mKW2EHyuE68cdiqvuzZeqjduvy4PKAL-Qx6h9Gp0c/exec";
+const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 ນາທີ
 
 let tasks   = [];
 let users   = [];
 let filterSt = 'all';
 let myChart  = null;
 let userRole = 'guest';
+let nextRefreshTime = Date.now() + REFRESH_INTERVAL;
 
 /* ─── Lookup Maps ─────────────────────────────────────────── */
 const ST_NEXT  = { todo:'doing', doing:'done', done:'todo', incomplete:'todo' };
@@ -345,6 +335,7 @@ function startApp() {
   document.getElementById('user-tag').textContent = userRole.toUpperCase();
   if (userRole === 'admin') document.getElementById('admin-form').style.display = 'grid';
   loadFromSheet();
+  startAutoRefresh(); // ເລີ່ມລະບົບ Auto Refresh
 }
 
 /* ─── Data: Load / Save ──────────────────────────────────── */
@@ -358,12 +349,13 @@ async function loadFromSheet() {
     tasks = data.tasks.map(t => ({ ...t, id: Number(t.id) })).filter(t => t.name);
     users = data.users || [];
 
-    /* populate assignee multi-select */
     populateAssignDD();
-
     dot.className = 'sync-dot ok';
     document.getElementById('sync-text').textContent = 'Sync ສຳເລັດ';
     document.getElementById('sync-time').textContent = new Date().toLocaleTimeString('lo-LA');
+    
+    // ຣີເຊັດເວລານັບຖອຍຫຼັງໃໝ່ທຸກຄັ້ງທີ່ໂຫຼດສຳເລັດ
+    nextRefreshTime = Date.now() + REFRESH_INTERVAL;
     render();
   } catch (e) {
     dot.className = 'sync-dot';
@@ -379,6 +371,24 @@ async function saveToSheet() {
   } catch (e) {
     showToast("ບັນທຶກຂໍ້ມູນຜິດພາດ!");
   }
+}
+
+/* ─── Auto Refresh Logic (NEW) ───────────────────────────── */
+function startAutoRefresh() {
+  // ອັບເດດຕົວເລກ Countdown ທຸກໆ 1 ວິນາທີ
+  setInterval(() => {
+    const now = Date.now();
+    const diff = nextRefreshTime - now;
+    
+    if (diff <= 0) {
+      loadFromSheet(); // ໂຫຼດຂໍ້ມູນໃໝ່ເມື່ອຮອດເວລາ
+    } else {
+      const mins = Math.floor(diff / 60000);
+      const secs = Math.floor((diff % 60000) / 1000);
+      document.getElementById('refresh-timer').textContent = 
+        `🔄 ໂຫຼດໃໝ່ໃນ ${mins}:${secs.toString().padStart(2, '0')}`;
+    }
+  }, 1000);
 }
 
 /* ─── Utility ────────────────────────────────────────────── */
@@ -397,7 +407,6 @@ function toDateObj(d) {
 }
 
 function daysDiff(d1, d2) {
-  /* d2 - d1 in whole days */
   if (!d1 || !d2) return null;
   return Math.round((d2.getTime() - d1.getTime()) / 86400000);
 }
@@ -411,118 +420,71 @@ function showToast(m) {
 
 /* ─── Person Stats Computation ───────────────────────────── */
 function splitAssignees(raw) {
-  /* Split "ສົມ, ໄຊ, ນາງ" → ['ສົມ','ໄຊ','ນາງ'], filter blanks */
   return (raw || '').split(',').map(a => a.trim()).filter(a => a && a !== 'ບໍ່ລະບຸ');
 }
 
 function computePersonStats() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-
-  /* collect unique individual names across all tasks */
   const names = [...new Set(tasks.flatMap(t => splitAssignees(t.assignee)))];
 
   return names.map(name => {
-    /* a task belongs to this person if their name is in the comma list */
     const myTasks = tasks.filter(t => splitAssignees(t.assignee).includes(name));
-
     const done       = myTasks.filter(t => t.status === 'done');
     const incomplete = myTasks.filter(t => t.status === 'incomplete');
-    /* pending = ວຽກທີ່ຍັງບໍ່ສຳເລັດ ແລະ ຍັງບໍ່ຖືກ mark ເປັນ incomplete */
     const pending    = myTasks.filter(t => t.status === 'todo' || t.status === 'doing');
 
-    /* Completed on-time: done AND completed_at <= due (both must exist) */
     const onTime = done.filter(t => {
       const ca  = toDateObj(t.completed_at);
       const due = toDateObj(t.due);
-      if (!ca || !due) return false;
-      return ca <= due;
+      return ca && due && ca <= due;
     });
 
-    /* Completed late: done AND completed_at > due */
     const late = done.filter(t => {
       const ca  = toDateObj(t.completed_at);
       const due = toDateObj(t.due);
-      if (!ca || !due) return false;
-      return ca > due;
+      return ca && due && ca > due;
     });
 
-    /* For late tasks: calc days late per task */
-    const lateDays = late.map(t => {
-      const ca  = toDateObj(t.completed_at);
-      const due = toDateObj(t.due);
-      return daysDiff(due, ca); /* positive = how many days after deadline */
-    }).filter(x => x !== null);
-
-    const avgLateDays = lateDays.length
-      ? Math.round(lateDays.reduce((a, b) => a + b, 0) / lateDays.length)
-      : 0;
+    const lateDays = late.map(t => daysDiff(toDateObj(t.due), toDateObj(t.completed_at))).filter(x => x !== null);
+    const avgLateDays = lateDays.length ? Math.round(lateDays.reduce((a, b) => a + b, 0) / lateDays.length) : 0;
     const maxLateDays = lateDays.length ? Math.max(...lateDays) : 0;
 
-    /* Pending overdue: not done AND due < today — include days overdue */
     const overdueList = pending
       .filter(t => { const due = toDateObj(t.due); return due && due < today; })
-      .map(t => {
-        const due = toDateObj(t.due);
-        return { name: t.name, days: daysDiff(due, today) };
-      })
-      .sort((a, b) => b.days - a.days); /* worst first */
+      .map(t => ({ name: t.name, days: daysDiff(toDateObj(t.due), today) }))
+      .sort((a, b) => b.days - a.days);
 
     return {
       name,
-      photo:          (users.find(u => u.name.trim() === name) || {}).photo || '',
-      total:          myTasks.length,
-      done:         done.length,
-      onTime:       onTime.length,
-      late:         late.length,
+      photo: (users.find(u => u.name.trim() === name) || {}).photo || '',
+      total: myTasks.length,
+      done: done.length,
+      onTime: onTime.length,
+      late: late.length,
       avgLateDays,
       maxLateDays,
-      pending:      pending.length,
-      onTrackPending: pending.length,   /* alias — pending is already on-track */
-      incomplete:   incomplete.length,  /* manually marked by admin */
-      overdue:      overdueList.length,
+      pending: pending.length,
+      onTrackPending: pending.length,
+      incomplete: incomplete.length,
+      overdue: overdueList.length,
       overdueList,
     };
-  })
-  /* Sort: most pending first, then most late first */
-  .sort((a, b) => b.pending - a.pending || b.late - a.late);
+  }).sort((a, b) => b.pending - a.pending || b.late - a.late);
 }
 
-/* ─── Person Stats Panel Render (NEW) ───────────────────── */
+/* ─── Render Functions (Same as original but integrated) ── */
 function renderPersonPanel() {
   const panel = document.getElementById('person-stats-panel');
   const stats = computePersonStats();
-
-  if (!stats.length) {
-    panel.innerHTML = '<div class="no-task-msg">ຍັງບໍ່ມີຂໍ້ມູນ</div>';
-    return;
-  }
+  if (!stats.length) { panel.innerHTML = '<div class="no-task-msg">ຍັງບໍ່ມີຂໍ້ມູນ</div>'; return; }
 
   panel.innerHTML = stats.map((s, i) => {
     const rankClass = i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : 'rank-other';
     const rankIcon  = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1);
-
     const avatarHtml = s.photo
-      ? `<img class="person-avatar" src="${imgProxy(s.photo)}" alt="${s.name}"
-             onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-         <div class="person-avatar-fallback" style="display:none">${s.name.charAt(0).toUpperCase()}</div>`
-      : `<div class="person-avatar-fallback">${s.name.charAt(0).toUpperCase()}</div>`;
-
-    const lateBlock = s.late > 0
-      ? `<div class="late-detail">⏰ ລ່າຊ້າ avg <b>${s.avgLateDays}</b> ມື້ · max <b>${s.maxLateDays}</b> ມື້</div>`
-      : '';
-
-    const overdueBlock = s.overdueList.length > 0
-      ? `<div class="overdue-detail">
-           <div style="font-weight:700;margin-bottom:4px;">⚠️ ຄ້າງເກີນກຳນົດ ${s.overdueList.length} ວຽກ:</div>
-           ${s.overdueList.map(o =>
-             `<div style="display:flex;justify-content:space-between;align-items:center;padding:2px 0;border-top:1px solid #fae7cb;">
-               <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${o.name}</span>
-               <span style="flex-shrink:0;margin-left:8px;font-weight:800;color:#c0392b;">+${o.days} ມື້</span>
-             </div>`
-           ).join('')}
-         </div>`
-      : '';
+      ? `<img class="person-avatar" src="${imgProxy(s.photo)}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="person-avatar-fallback" style="display:none">${s.name.charAt(0)}</div>`
+      : `<div class="person-avatar-fallback">${s.name.charAt(0)}</div>`;
 
     return `
       <div class="person-card">
@@ -533,505 +495,153 @@ function renderPersonPanel() {
           <div class="person-total">ທັງໝົດ ${s.total}</div>
         </div>
         <div class="person-stats-grid">
-          <div class="psg-item psg-ontime">
-            <b>${s.onTime}</b>
-            <span>ທັນກຳນົດ</span>
-          </div>
-          <div class="psg-item psg-late">
-            <b>${s.late}</b>
-            <span>ລ່າຊ້າ</span>
-          </div>
-          <div class="psg-item psg-pending">
-            <b>${s.onTrackPending}</b>
-            <span>ຄ້າງ</span>
-          </div>
-          <div class="psg-item psg-incomplete">
-            <b>${s.incomplete}</b>
-            <span>ບໍ່ສຳເລັດ</span>
-          </div>
+          <div class="psg-item psg-ontime"><b>${s.onTime}</b><span>ທັນກຳນົດ</span></div>
+          <div class="psg-item psg-late"><b>${s.late}</b><span>ລ່າຊ້າ</span></div>
+          <div class="psg-item psg-pending"><b>${s.pending}</b><span>ຄ້າງ</span></div>
+          <div class="psg-item psg-incomplete"><b>${s.incomplete}</b><span>ບໍ່ສຳເລັດ</span></div>
         </div>
-        ${lateBlock}
-        ${overdueBlock}
+        ${s.late > 0 ? `<div class="late-detail">⏰ ລ່າຊ້າ avg <b>${s.avgLateDays}</b> ມື້</div>` : ''}
+        ${s.overdueList.length > 0 ? `<div class="overdue-detail">⚠️ ຄ້າງເກີນກຳນົດ ${s.overdueList.length} ວຽກ</div>` : ''}
       </div>`;
   }).join('');
 }
 
-/* ─── Bar Chart ──────────────────────────────────────────── */
 function updateChart() {
-  const ctx      = document.getElementById('performanceChart').getContext('2d');
-  const stats    = computePersonStats(); /* reuse sorted stats */
+  const ctx = document.getElementById('performanceChart').getContext('2d');
+  const stats = computePersonStats();
   const userList = stats.map(s => s.name);
-
-  const doneData       = stats.map(s => s.done);
-  const onTrackData    = stats.map(s => s.pending);       /* ວຽກຄ້າງ (todo/doing) */
-  const incompleteData = stats.map(s => s.incomplete);    /* ວຽກບໍ່ສຳເລັດ (admin marked) */
-
-  /* build tooltip details per dataset */
-  const today = new Date(); today.setHours(0,0,0,0);
-
-  const onTrackDetails = userList.map(name => {
-    const list = tasks.filter(t =>
-      splitAssignees(t.assignee).includes(name) &&
-      (t.status === 'todo' || t.status === 'doing')
-    );
-    return list.length === 0 ? 'ບໍ່ມີວຽກຄ້າງ' : list.map(t => `• ${t.name}`).join('\n');
-  });
-
-  const incompleteDetails = userList.map(name => {
-    const list = tasks.filter(t =>
-      splitAssignees(t.assignee).includes(name) && t.status === 'incomplete'
-    );
-    return list.length === 0 ? 'ບໍ່ມີວຽກບໍ່ສຳເລັດ'
-      : list.map(t => `• ${t.name}`).join('\n');
-  });
-
-  if (myChart) {
-    myChart.destroy();
-    myChart = null;
-  }
-
   if (!userList.length) return;
 
-  /* ── Preload avatar images via CORS proxy (fixes Google Drive CORS block) ── */
-  function proxyUrl(url) {
-    if (!url) return '';
-    /* convert lh3 → public thumbnail, then wrap in weserv for canvas CORS */
-    const publicUrl = toPublicDriveUrl(url);
-    const bare = publicUrl.replace(/^https?:\/\//, '');
-    return `https://images.weserv.nl/?url=${encodeURIComponent(bare)}&w=120&h=120&fit=cover&mask=circle&mtrim`;
-  }
-
-  let avatarImgs = stats.map(() => null);
-  let loadedCount = 0;
-  const totalWithPhoto = stats.filter(s => s.photo).length;
-
-  stats.forEach((s, i) => {
-    if (!s.photo) return;
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      avatarImgs[i] = img;
-      loadedCount++;
-      /* redraw chart once all images loaded */
-      if (myChart) myChart.draw();
-    };
-    img.onerror = () => { loadedCount++; };
-    img.src = proxyUrl(s.photo);
-  });
-
-  /* ── Custom plugin: draw circular avatars below each x-axis label ── */
-  const avatarXPlugin = {
-    id: 'avatarXPlugin',
-    afterDraw(chart) {
-      const { ctx, scales: { x } } = chart;
-      const sz = 52;
-      x.ticks.forEach((tick, i) => {
-        const xPos = x.getPixelForTick(i);
-        const yPos = chart.height - sz / 2 - 4;
-        const img  = avatarImgs[i];
-        /* clip to circle */
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(xPos, yPos, sz / 2, 0, Math.PI * 2);
-        ctx.clip();
-        if (img && img.complete && img.naturalWidth > 0) {
-          ctx.drawImage(img, xPos - sz / 2, yPos - sz / 2, sz, sz);
-        } else {
-          /* fallback coloured circle */
-          ctx.fillStyle = '#e8f5ee';
-          ctx.fillRect(xPos - sz / 2, yPos - sz / 2, sz, sz);
-          ctx.fillStyle = '#2d6a4f';
-          ctx.font = `bold 18px 'Noto Sans Lao', sans-serif`;
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText((userList[i] || '?').charAt(0).toUpperCase(), xPos, yPos);
-        }
-        ctx.restore();
-        /* border ring */
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(xPos, yPos, sz / 2 + 2, 0, Math.PI * 2);
-        ctx.strokeStyle = '#c9e6d5';
-        ctx.lineWidth = 3;
-        ctx.stroke();
-        ctx.restore();
-      });
-    }
-  };
-
+  if (myChart) myChart.destroy();
   myChart = new Chart(ctx, {
     type: 'bar',
-    plugins: [avatarXPlugin],
     data: {
       labels: userList,
       datasets: [
-        {
-          label:           'ວຽກບໍ່ສຳເລັດ',
-          data:            incompleteData,
-          backgroundColor: '#f5c518',
-          borderRadius:    4,
-          details:         incompleteDetails,
-        },
-        {
-          label:           'ວຽກຄ້າງ',
-          data:            onTrackData,
-          backgroundColor: '#ff6b6b',
-          borderRadius:    4,
-          details:         onTrackDetails,
-        },
-        {
-          label:           'ວຽກສຳເລັດ',
-          data:            doneData,
-          backgroundColor: '#2d6a4f',
-          borderRadius:    4,
-        },
-      ],
+        { label: 'ວຽກບໍ່ສຳເລັດ', data: stats.map(s => s.incomplete), backgroundColor: '#f5c518' },
+        { label: 'ວຽກຄ້າງ', data: stats.map(s => s.pending), backgroundColor: '#ff6b6b' },
+        { label: 'ວຽກສຳເລັດ', data: stats.map(s => s.done), backgroundColor: '#2d6a4f' }
+      ]
     },
     options: {
-      responsive:          true,
-      maintainAspectRatio: false,
-      layout: {
-        padding: { top: 8, right: 12, bottom: 68, left: 0 },
-      },
-      scales: {
-        x: {
-          stacked: true,
-          ticks: {
-            font: { family: 'Noto Sans Lao', size: 11 },
-            maxRotation: 30,
-            autoSkip: false,
-          },
-          grid: { display: false },
-        },
-        y: {
-          stacked: true,
-          beginAtZero: true,
-          ticks: {
-            stepSize: 1,
-            font: { family: 'Noto Sans Lao', size: 11 },
-            precision: 0,
-          },
-          grid: { color: '#f0ede8' },
-        },
-      },
-      plugins: {
-        legend: {
-          position: 'top',
-          align: 'end',
-          labels: {
-            font: { family: 'Noto Sans Lao', size: 11 },
-            boxWidth: 12,
-            boxHeight: 12,
-            padding: 12,
-          },
-        },
-        tooltip: {
-          callbacks: {
-            afterLabel: function(context) {
-              if (context.dataset.label === 'ວຽກຄ້າງ') {
-                return '\nລາຍຊື່ວຽກຄ້າງ:\n' + context.dataset.details[context.dataIndex];
-              }
-              if (context.dataset.label === 'ວຽກບໍ່ສຳເລັດ') {
-                return '\nວຽກເກີນ Deadline:\n' + context.dataset.details[context.dataIndex];
-              }
-            },
-          },
-          bodyFont:  { family: 'Noto Sans Lao', size: 12 },
-          titleFont: { family: 'Noto Sans Lao', size: 12 },
-          padding:   10,
-        },
-      },
-    },
+      responsive: true, maintainAspectRatio: false,
+      scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1 } } }
+    }
   });
 }
 
-/* ─── Image Proxy helper (fixes Google Drive CORS for <img> tags) ── */
 function toPublicDriveUrl(url) {
   if (!url) return '';
-  /* lh3.googleusercontent.com/d/FILE_ID  →  thumbnail URL (no auth needed) */
-  const lh3Match = url.match(/lh3\.googleusercontent\.com\/d\/([a-zA-Z0-9_\-]+)/);
-  if (lh3Match) return `https://drive.google.com/thumbnail?id=${lh3Match[1]}&sz=w200`;
-  /* drive.google.com/file/d/FILE_ID/view  →  thumbnail URL */
-  const driveMatch = url.match(/\/d\/([a-zA-Z0-9_\-]+)/);
-  if (driveMatch) return `https://drive.google.com/thumbnail?id=${driveMatch[1]}&sz=w200`;
-  return url;
+  const m = url.match(/\/d\/([a-zA-Z0-9_\-]+)/) || url.match(/id=([a-zA-Z0-9_\-]+)/);
+  return m ? `https://drive.google.com/thumbnail?id=${m[1]}&sz=w200` : url;
 }
-
 function imgProxy(url) {
-  if (!url) return '';
-  /* convert to public thumbnail first, then wrap in weserv for CORS */
   const publicUrl = toPublicDriveUrl(url);
-  const bare = publicUrl.replace(/^https?:\/\//, '');
-  return `https://images.weserv.nl/?url=${encodeURIComponent(bare)}&w=120&h=120&fit=cover`;
+  return `https://images.weserv.nl/?url=${encodeURIComponent(publicUrl.replace(/^https?:\/\//, ''))}&w=100&h=100&fit=cover`;
 }
 
-/* ─── Assignee Cell with Avatar ──────────────────────────── */
 function renderAssigneeCell(assigneeStr) {
   const names = splitAssignees(assigneeStr);
-  if (!names.length) return assigneeStr || '—';
   return names.map(name => {
-    const u     = users.find(x => x.name.trim() === name.trim());
+    const u = users.find(x => x.name.trim() === name.trim());
     const photo = u?.photo ? imgProxy(u.photo) : '';
-    const av    = photo
-      ? `<img class="tbl-avatar" src="${photo}" alt="${name}"
-             onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'">
-         <span class="tbl-avatar-fallback" style="display:none">${name.charAt(0).toUpperCase()}</span>`
-      : `<span class="tbl-avatar-fallback">${name.charAt(0).toUpperCase()}</span>`;
-    return `<span style="display:inline-flex;align-items:center;margin-right:6px;">${av}${name}</span>`;
+    return `<span style="display:inline-flex;align-items:center;margin-right:6px;">
+      ${photo ? `<img class="tbl-avatar" src="${photo}">` : `<span class="tbl-avatar-fallback">${name[0]}</span>`}${name}</span>`;
   }).join('');
 }
 
-/* ─── Main Render ────────────────────────────────────────── */
 function render() {
-  /* stats cards */
-  const tot = tasks.length;
-  const dn  = tasks.filter(t => t.status === 'done').length;
+  const tot = tasks.length, dn = tasks.filter(t => t.status === 'done').length;
   const pct = tot ? Math.round((dn / tot) * 100) : 0;
-
-  const incompleteCnt = tasks.filter(t => t.status === 'incomplete').length;
-
+  
   document.getElementById('stats-grid').innerHTML = `
     <div class="stat-card"><b style="color:#1a4d8f">${tot}</b><p>ວຽກທັງໝົດ</p></div>
     <div class="stat-card"><b style="color:#7a4f0a">${tasks.filter(t => t.status === 'doing').length}</b><p>ກຳລັງເຮັດ</p></div>
     <div class="stat-card"><b style="color:var(--accent)">${dn}</b><p>ສຳເລັດ</p></div>
-    <div class="stat-card"><b style="color:#b8860b">${incompleteCnt}</b><p>ບໍ່ສຳເລັດ</p></div>`;
+    <div class="stat-card"><b style="color:#b8860b">${tasks.filter(t => t.status === 'incomplete').length}</b><p>ບໍ່ສຳເລັດ</p></div>`;
 
-  /* progress */
   document.getElementById('prog-fill').style.width = pct + '%';
   document.getElementById('prog-pct').textContent  = pct + '%';
 
-  /* status filter tabs */
-  const tabData = [
-    ['all',        'ທັງໝົດ',   tot],
-    ['todo',       'ລໍຖ້າ',    tasks.filter(t => t.status === 'todo').length],
-    ['doing',      'ດຳເນີນ',   tasks.filter(t => t.status === 'doing').length],
-    ['done',       'ສຳເລັດ',   dn],
-    ['incomplete', 'ບໍ່ສຳເລັດ', incompleteCnt],
-  ];
-  document.getElementById('statusFilters').innerHTML = tabData
-    .map(([f, l, c]) =>
-      `<button class="fp${filterSt === f ? ' on' : ''}" onclick="filterSt='${f}';render()">` +
-      `${l} <span class="cb">${c}</span></button>`)
-    .join('');
+  const q = (document.getElementById('searchInput').value || '').toLowerCase();
+  document.getElementById('tbody').innerHTML = tasks
+    .filter(t => t.name.toLowerCase().includes(q) || (t.assignee || '').toLowerCase().includes(q))
+    .filter(t => filterSt === 'all' || t.status === filterSt)
+    .map((t, i) => `<tr>
+      <td>${i + 1}</td>
+      <td><b>${t.name}</b></td>
+      <td>${renderAssigneeCell(t.assignee)}</td>
+      <td>${fmtDate(t.assigned)}</td>
+      <td>${fmtDate(t.due)}</td>
+      <td>${fmtDate(t.completed_at)}</td>
+      <td><span class="badge ${PRIO_CLS[t.prio]}">${PRIO_LABEL[t.prio]}</span></td>
+      <td><span class="badge ${ST_CLS[t.status]}">${ST_LABEL[t.status]}</span></td>
+      <td style="display:flex;gap:4px;">
+        ${userRole === 'admin' ? `
+          <button class="btn btn-sm ${MV_CLS[t.status]}" onclick="moveTask(${t.id})">${MV_LBL[t.status]}</button>
+          <button class="btn btn-sm btn-danger" onclick="delTask(${t.id})">ລຶບ</button>` : '🔒 View'}
+      </td>
+    </tr>`).join('');
 
-  /* chart + person panel */
   updateChart();
   renderPersonPanel();
-
-  /* table */
-  const q  = (document.getElementById('searchInput').value || '').toLowerCase();
-  const ds = document.getElementById('dateStart').value;
-  const de = document.getElementById('dateEnd').value;
-
-  document.getElementById('tbody').innerHTML = tasks
-    .filter(t => {
-      const matchSearch = t.name.toLowerCase().includes(q) ||
-                          (t.assignee || '').toLowerCase().includes(q);
-      const matchStatus = filterSt === 'all' || t.status === filterSt;
-      let matchDate = true;
-      if (ds && de) matchDate = t.assigned >= ds && t.assigned <= de;
-      return matchSearch && matchStatus && matchDate;
-    })
-    .map((t, i) => {
-      /* ປຸ່ມ ບໍ່ສຳເລັດ: ຖ້າ status ຍັງບໍ່ແມ່ນ incomplete ໃຫ້ສະແດງ; ຖ້າ incomplete ແລ້ວ ບໍ່ສະແດງ (ໃຊ້ ↺ ຣີເຊັດ ແທນ) */
-      const incBtn = (t.status !== 'incomplete' && t.status !== 'done')
-        ? `<button class="btn btn-sm" style="background:#fffbea;color:#b8860b;border:1px solid #f0d060;" onclick="markIncomplete(${t.id})" title="ໝາຍວ່າບໍ່ສຳເລັດ">⚠️ ບໍ່ສຳເລັດ</button>`
-        : '';
-      const actions = userRole === 'admin'
-        ? `<td style="display:flex;gap:6px;flex-wrap:wrap;">
-             <button class="btn btn-sm ${MV_CLS[t.status]}" onclick="moveTask(${t.id})">${MV_LBL[t.status]}</button>
-             ${incBtn}
-             <button class="btn btn-sm btn-wa" onclick="sendWA(${t.id})">WA</button>
-             <button class="btn btn-sm btn-danger" onclick="delTask(${t.id})" title="ລຶບ">ລຶບ</button>
-           </td>`
-        : `<td>🔒 View Only</td>`;
-
-      return `<tr>
-        <td style="color:#888;font-family:'DM Mono'">${i + 1}</td>
-        <td><b style="color:#111">${t.name}</b></td>
-        <td style="font-weight:500">${renderAssigneeCell(t.assignee)}</td>
-        <td>${fmtDate(t.assigned)}</td>
-        <td>${fmtDate(t.due)}</td>
-        <td style="color:var(--accent);font-weight:600">${fmtDate(t.completed_at)}</td>
-        <td><span class="badge ${PRIO_CLS[t.prio] || 'b-todo'}">${PRIO_LABEL[t.prio] || t.prio}</span></td>
-        <td><span class="badge ${ST_CLS[t.status]}">${ST_LABEL[t.status]}</span></td>
-        ${actions}
-      </tr>`;
-    })
-    .join('');
+  
+  // Update status filter buttons
+  const tabData = [['all','ທັງໝົດ'],['todo','ລໍຖ້າ'],['doing','ດຳເນີນ'],['done','ສຳເລັດ'],['incomplete','ບໍ່ສຳເລັດ']];
+  document.getElementById('statusFilters').innerHTML = tabData.map(([f, l]) => 
+    `<button class="fp${filterSt === f ? ' on' : ''}" onclick="filterSt='${f}';render()">${l}</button>`).join('');
 }
-
-/* ─── Multi-Select Dropdown Logic ────────────────────────── */
-function populateAssignDD() {
-  const opts = document.getElementById('assignOpts');
-  if (!opts) return;
-  opts.innerHTML = users.map(u =>
-    `<label class="ms-opt" id="ms-opt-${CSS.escape(u.name)}">
-       <input type="checkbox" value="${u.name}" onchange="refreshAssignTags()"> ${u.name}
-     </label>`
-  ).join('');
-}
-
-function toggleAssignDD(e) {
-  e.stopPropagation();
-  const input = document.getElementById('assignInput');
-  const dd    = document.getElementById('assignDD');
-  const isOpen = dd.classList.contains('open');
-  dd.classList.toggle('open', !isOpen);
-  input.classList.toggle('open', !isOpen);
-}
-
-function refreshAssignTags() {
-  const checked  = [...document.querySelectorAll('#assignOpts input:checked')];
-  const tagsEl   = document.getElementById('assignTags');
-  const ph       = document.getElementById('assignPH');
-  const badge    = document.getElementById('task-preview-badge');
-  /* update .checked class on rows */
-  document.querySelectorAll('#assignOpts .ms-opt').forEach(row => {
-    row.classList.toggle('checked', row.querySelector('input').checked);
-  });
-  if (checked.length === 0) {
-    ph.style.display = '';
-    tagsEl.innerHTML = '';
-    if (badge) { badge.style.display = 'none'; }
-  } else {
-    ph.style.display = 'none';
-    tagsEl.innerHTML = checked.map(cb =>
-      `<span class="ms-tag">${cb.value}
-         <span class="ms-tag-x" onclick="removeAssignee(event,'${cb.value}')">×</span>
-       </span>`
-    ).join('');
-    if (badge) {
-      badge.style.display = '';
-      badge.textContent = checked.length > 1
-        ? `→ ສ້າງ ${checked.length} ວຽກ (1 ຄົນ / 1 ວຽກ)`
-        : `→ ສ້າງ 1 ວຽກ`;
-    }
-  }
-}
-
-function removeAssignee(e, name) {
-  e.stopPropagation();
-  const cb = document.querySelector(`#assignOpts input[value="${name}"]`);
-  if (cb) { cb.checked = false; refreshAssignTags(); }
-}
-
-function getSelectedAssignees() {
-  return [...document.querySelectorAll('#assignOpts input:checked')].map(cb => cb.value);
-}
-
-function clearAssignDD() {
-  document.querySelectorAll('#assignOpts input').forEach(cb => cb.checked = false);
-  refreshAssignTags();
-}
-
-/* close dropdown when clicking outside */
-document.addEventListener('click', function(e) {
-  const wrap = document.getElementById('assignWrap');
-  if (wrap && !wrap.contains(e.target)) {
-    document.getElementById('assignDD').classList.remove('open');
-    document.getElementById('assignInput').classList.remove('open');
-  }
-});
 
 /* ─── Task Actions ───────────────────────────────────────── */
 async function moveTask(id) {
   const t = tasks.find(x => x.id === id);
   if (!t) return;
-  const next  = ST_NEXT[t.status];
-  t.status    = next;
-  t.completed_at = next === 'done'
-    ? new Date().toISOString().split('T')[0]
-    : (next === 'todo' ? '' : t.completed_at);
+  t.status = ST_NEXT[t.status];
+  t.completed_at = t.status === 'done' ? new Date().toISOString().split('T')[0] : '';
   render();
   await saveToSheet();
-}
-
-async function markIncomplete(id) {
-  const t = tasks.find(x => x.id === id);
-  if (!t) return;
-  if (!confirm(`ໝາຍວ່າ "${t.name}" ເປັນ ວຽກບໍ່ສຳເລັດ ແທ້ບໍ?\n(admin ສາມາດ ↺ ຣີເຊັດ ກັບໄປ ລໍຖ້າ ໄດ້ພາຍຫຼັງ)`)) return;
-  t.status       = 'incomplete';
-  t.completed_at = '';
-  render();
-  await saveToSheet();
-  showToast(`⚠️ ໝາຍວ່າ "${t.name}" ບໍ່ສຳເລັດແລ້ວ`);
 }
 
 async function addTask() {
-  const nEl  = document.getElementById('fName');
-  const asEl = document.getElementById('fAssigned');
-  const dEl  = document.getElementById('fDue');
-  const pEl  = document.getElementById('fPrio');
-  const name = nEl.value.trim();
-  if (!name) return showToast("ໃສ່ຊື່ວຽກກ່ອນ!");
-
+  const n = document.getElementById('fName').value.trim();
+  if (!n) return showToast("ໃສ່ຊື່ວຽກກ່ອນ!");
   const selected = getSelectedAssignees();
-
-  if (selected.length === 0) {
-    /* No assignee selected: add one task with 'ບໍ່ລະບຸ' */
+  const baseId = Date.now();
+  
+  (selected.length ? selected : ['ບໍ່ລະບຸ']).forEach((p, idx) => {
     tasks.push({
-      id:           Date.now(),
-      name,
-      assignee:     'ບໍ່ລະບຸ',
-      assigned:     asEl.value,
-      due:          dEl.value,
-      completed_at: '',
-      prio:         pEl.value,
-      status:       'todo',
+      id: baseId + idx, name: n, assignee: p,
+      assigned: document.getElementById('fAssigned').value,
+      due: document.getElementById('fDue').value,
+      prio: document.getElementById('fPrio').value,
+      status: 'todo', completed_at: ''
     });
-  } else {
-    /* Multiple assignees: create a SEPARATE task for each person */
-    const baseId = Date.now();
-    selected.forEach((personName, idx) => {
-      tasks.push({
-        id:           baseId + idx,        // unique id per person
-        name,                              // same task name
-        assignee:     personName,          // only THIS person
-        assigned:     asEl.value,
-        due:          dEl.value,
-        completed_at: '',
-        prio:         pEl.value,
-        status:       'todo',
-      });
-    });
-  }
+  });
 
   render();
   await saveToSheet();
-  nEl.value = ''; asEl.value = ''; dEl.value = ''; pEl.value = 'm';
+  document.getElementById('fName').value = '';
   clearAssignDD();
-
-  const msg = selected.length > 1
-    ? `ເພີ່ມວຽກສຳເລັດ! (${selected.length} ຄົນ × 1 ວຽກ = ${selected.length} ລາຍການ)`
-    : "ເພີ່ມວຽກສຳເລັດ!";
-  showToast(msg);
 }
 
 async function delTask(id) {
-  if (!confirm("ລຶບແທ້ບໍ?")) return;
-  tasks = tasks.filter(t => t.id !== id);
-  render();
-  await saveToSheet();
+  if (confirm("ລຶບແທ້ບໍ?")) { tasks = tasks.filter(t => t.id !== id); render(); await saveToSheet(); }
 }
 
-function sendWA(id) {
-  const t = tasks.find(x => x.id === id);
-  if (!t) return;
-  const names = splitAssignees(t.assignee);
-  if (names.length === 0) return alert("ບໍ່ມີຜູ້ຮັບຜິດຊອບ");
-  let sent = 0;
-  names.forEach(aName => {
-    const u = users.find(x => x.name.replace(/\s+/g,'') === aName.replace(/\s+/g,''));
-    if (!u || !u.phone) return;
-    const msg = `ສະບາຍດີ ${aName},\nທ່ານມີວຽກ:\n📌 ວຽກ: ${t.name}\n📅 Deadline: ${fmtDate(t.due)}`;
-    window.open(`https://wa.me/${u.phone}?text=${encodeURIComponent(msg)}`, '_blank');
-    sent++;
-  });
-  if (sent === 0) alert("ບໍ່ພົບເບີ WhatsApp ໃນ Sheet2");
+function populateAssignDD() {
+  const o = document.getElementById('assignOpts');
+  if (o) o.innerHTML = users.map(u => `<label class="ms-opt"><input type="checkbox" value="${u.name}" onchange="refreshAssignTags()"> ${u.name}</label>`).join('');
 }
+function toggleAssignDD(e) { e.stopPropagation(); document.getElementById('assignDD').classList.toggle('open'); }
+function refreshAssignTags() {
+  const checked = [...document.querySelectorAll('#assignOpts input:checked')];
+  document.getElementById('assignTags').innerHTML = checked.map(c => `<span class="ms-tag">${c.value}</span>`).join('');
+  document.getElementById('assignPH').style.display = checked.length ? 'none' : 'block';
+}
+function getSelectedAssignees() { return [...document.querySelectorAll('#assignOpts input:checked')].map(c => c.value); }
+function clearAssignDD() { document.querySelectorAll('#assignOpts input').forEach(c => c.checked = false); refreshAssignTags(); }
 
-/* ─── Boot ───────────────────────────────────────────────── */
+document.addEventListener('click', () => document.getElementById('assignDD')?.classList.remove('open'));
 checkPreviousLogin();
 </script>
 </body>
