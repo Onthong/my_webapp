@@ -36,13 +36,13 @@
   .prog-bar{flex:1;height:8px;background:#ddd;border-radius:10px;overflow:hidden;}
   .prog-fill{height:100%;background:var(--accent);transition:0.4s;}
 
-  /* ===== Chart + Stats Row ===== */
+  /* ===== Chart + Stats Row (NEW LAYOUT) ===== */
   .chart-row{display:flex;gap:15px;margin-bottom:15px;height:420px;}
   .chart-box{flex:1;background:var(--card);border-radius:var(--r);padding:16px 16px 16px 16px;border:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;min-width:0;}
   .chart-canvas-wrap{flex:1;position:relative;min-height:0;width:100%;}
   .chart-canvas-wrap canvas{position:absolute;top:0;left:0;width:100%!important;height:100%!important;}
 
-  /* ===== Person Stats Panel ===== */
+  /* ===== Person Stats Panel (NEW) ===== */
   .person-panel{width:340px;flex-shrink:0;background:var(--card);border-radius:var(--r);border:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
   .person-panel-header{padding:13px 16px;border-bottom:1px solid var(--border);background:#f8f9fa;flex-shrink:0;}
   .person-panel-header h3{font-size:13px;font-weight:700;color:#1c1a17;}
@@ -50,6 +50,7 @@
   .person-panel-body{overflow-y:auto;flex:1;padding:10px;min-height:0;}
   .person-card{border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;background:#fff;transition:box-shadow 0.2s;}
   .person-card:hover{box-shadow:0 3px 10px rgba(0,0,0,0.06);}
+  .person-card:last-child{margin-bottom:0;}
   .person-card-top{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
   .rank-badge{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;}
   .rank-1{background:#ffd700;color:#7a5000;}
@@ -69,10 +70,12 @@
   .psg-incomplete{background:#fffbea;border:1px solid #f0d060;}
   .late-detail{margin-top:7px;font-size:10px;color:#c0392b;background:#fff5f5;border:1px solid #fce4e4;border-radius:6px;padding:5px 8px;}
   .overdue-detail{margin-top:5px;font-size:10px;color:#7a4f0a;background:#fef5e7;border:1px solid #fae7cb;border-radius:6px;padding:5px 8px;}
+  .no-task-msg{text-align:center;padding:30px;color:#aaa;font-size:12px;}
 
   /* ===== Avatar ===== */
   .person-avatar{width:42px;height:42px;border-radius:50%;object-fit:cover;border:2.5px solid #c9e6d5;flex-shrink:0;background:#eee;display:block;}
   .person-avatar-fallback{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;background:linear-gradient(135deg,#e8f5ee,#c9e6d5);color:var(--accent);border:2.5px solid #c9e6d5;flex-shrink:0;}
+  /* Avatar in table assignee cell */
   .tbl-avatar{width:26px;height:26px;border-radius:50%;object-fit:cover;border:1.5px solid var(--border);vertical-align:middle;margin-right:5px;background:#eee;}
   .tbl-avatar-fallback{width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;background:#e8f5ee;color:var(--accent);border:1.5px solid #c9e6d5;vertical-align:middle;margin-right:5px;}
 
@@ -97,8 +100,11 @@
   .ms-dropdown.open{display:block;}
   .ms-opt{display:flex;align-items:center;gap:10px;padding:9px 12px;cursor:pointer;font-size:12px;transition:background 0.1s;}
   .ms-opt:hover{background:#f0ede8;}
-  .ms-opt.checked{background:var(--accent-lt);}
+  .ms-opt:first-child{border-radius:10px 10px 0 0;}
+  .ms-opt:last-child{border-radius:0 0 10px 10px;}
   .ms-opt input[type=checkbox]{width:14px;height:14px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;}
+  .ms-opt.checked{background:var(--accent-lt);}
+  .ms-sep{height:1px;background:var(--border);margin:4px 0;}
 
   .toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:15px;background:var(--card);padding:14px;border-radius:var(--r);border:1px solid var(--border);}
   .search-box input{padding:8px 14px;border:1px solid var(--border);border-radius:8px;width:240px;outline:none;background:#f9f9f9;font-family:inherit;}
@@ -127,14 +133,6 @@
   tr:last-child td{border-bottom:none;}
   tr:hover td{background-color:#fcfbf9;}
 
-  /* ບັງຄັບໃຫ້ປຸ່ມຈັດການລຽງແຖວນອນສວຍງາມ */
-  .action-cell {
-    display: flex;
-    gap: 6px;
-    white-space: nowrap;
-    align-items: center;
-  }
-
   .badge{padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;gap:4px;}
   .b-todo{background:#eef4fb;color:#1a4d8f;border:1px solid #d0e1f5;}
   .b-doing{background:#fef5e7;color:#7a4f0a;border:1px solid #fae7cb;}
@@ -144,9 +142,11 @@
   .p-mid{background:#fef5e7;color:#7a4f0a;}
   .p-low{background:#eef4fb;color:#1a4d8f;}
 
+  /* ===== Toast ===== */
   .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#000;color:#fff;padding:10px 20px;border-radius:10px;opacity:0;transition:0.3s;z-index:9999;pointer-events:none;}
   .toast.show{opacity:1;}
 
+  /* ===== Responsive ===== */
   @media(max-width:900px){
     .chart-row{flex-direction:column;height:auto;}
     .chart-box{height:320px;}
@@ -188,7 +188,9 @@
 </div>
 
 <main class="main">
+
   <div class="stats" id="stats-grid"></div>
+
   <div class="prog-row">
     <span style="font-size:11px;font-weight:700;color:#5a5a5a;">ຄວາມຄືບໜ້າລວມ</span>
     <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
@@ -198,8 +200,11 @@
   <div class="chart-row">
     <div class="chart-box">
       <div style="font-size:12px;font-weight:700;color:#5a5a5a;margin-bottom:10px;flex-shrink:0;">📊 ພາບລວມຜົນງານທີມ</div>
-      <div class="chart-canvas-wrap"><canvas id="performanceChart"></canvas></div>
+      <div class="chart-canvas-wrap">
+        <canvas id="performanceChart"></canvas>
+      </div>
     </div>
+
     <div class="person-panel">
       <div class="person-panel-header">
         <h3>🏆 ອັນດັບສະຖິຕິລາຍບຸກຄົນ</h3>
@@ -214,14 +219,16 @@
   <div id="admin-form" class="form-grid">
     <div class="fg"><label>ຊື່ວຽກ *</label><input id="fName" placeholder="ພິມຊື່ວຽກ..."/></div>
     <div class="fg">
-      <label>ຜູ້ຮັບຜິດຊອບ <span id="task-preview-badge" style="display:none;background:#2d6a4f;color:#fff;font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;"></span></label>
+      <label>ຜູ້ຮັບຜິດຊອບ <span style="font-weight:400;color:#aaa;">(ເລືອກໄດ້ຫຼາຍຄົນ — ສ້າງວຽກລາຍຄົນ)</span> <span id="task-preview-badge" style="display:none;background:#2d6a4f;color:#fff;font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;"></span></label>
       <div class="ms-wrap" id="assignWrap">
         <div class="ms-input" id="assignInput" onclick="toggleAssignDD(event)">
-          <span class="ms-placeholder" id="assignPH">-- ເລືອກຜູ້ຮັບຜິດຊອບ --</span>
+          <span class="ms-placeholder" id="assignPH">-- ເເລືອກຜູ້ຮັບຜິດຊອບ --</span>
           <div id="assignTags" style="display:flex;flex-wrap:wrap;gap:4px;"></div>
           <span class="ms-arrow">▾</span>
         </div>
-        <div class="ms-dropdown" id="assignDD"><div id="assignOpts"></div></div>
+        <div class="ms-dropdown" id="assignDD">
+          <div id="assignOpts"></div>
+        </div>
       </div>
     </div>
     <div class="fg"><label>ວັນທີມອບວຽກ</label><input id="fAssigned" type="date"/></div>
@@ -239,8 +246,10 @@
   <div class="toolbar">
     <div class="search-box"><input type="text" id="searchInput" oninput="render()" placeholder="🔍 ຄົ້ນຫາຊື່ວຽກ/ຄົນ..."/></div>
     <div class="date-filter">
-      <span>ເລີ່ມ:</span><input type="date" id="dateStart" onchange="render()"/>
-      <span>ຫາ:</span><input type="date" id="dateEnd" onchange="render()"/>
+      <span style="font-size:11px;font-weight:700;">ເລີ່ມ:</span>
+      <input type="date" id="dateStart" onchange="render()"/>
+      <span style="font-size:11px;font-weight:700;">ຫາ:</span>
+      <input type="date" id="dateEnd" onchange="render()"/>
     </div>
     <div id="statusFilters" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
   </div>
@@ -257,256 +266,784 @@
           <th width="100">ສຳເລັດແທ້</th>
           <th width="100">ຄວາມສຳຄັນ</th>
           <th width="100">ສະຖານະ</th>
-          <th width="220">ຈັດການ</th>
+          <th width="160">ຈັດການ</th>
         </tr>
       </thead>
       <tbody id="tbody"></tbody>
     </table>
   </div>
+
 </main>
 
 <div class="toast" id="toast"></div>
 
 <script>
+/* ─── Config ─────────────────────────────────────────────── */
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyRX3NSAotb7Zjh5ESN4cDpj79mKW2EHyuE68cdiqvuzZeqjduvy4PKAL-Qx6h9Gp0c/exec";
-const AUTO_REFRESH_MS = 5 * 60 * 1000;
 
-let tasks = [], users = [], filterSt = 'all', myChart = null, userRole = 'guest';
-let refreshTimer = null, countdownTimer = null, nextRefreshAt = 0;
+let tasks   = [];
+let users   = [];
+let filterSt = 'all';
+let myChart  = null;
+let userRole = 'guest';
 
-const ST_NEXT = { todo:'doing', doing:'done', done:'todo', incomplete:'todo' };
+/* ─── Lookup Maps ─────────────────────────────────────────── */
+const ST_NEXT  = { todo:'doing', doing:'done', done:'todo', incomplete:'todo' };
 const ST_LABEL = { todo:'ລໍຖ້າ', doing:'ດຳເນີນຢູ່', done:'ສຳເລັດ', incomplete:'ບໍ່ສຳເລັດ' };
-const ST_CLS = { todo:'b-todo', doing:'b-doing', done:'b-done', incomplete:'b-incomplete' };
-const PRIO_CLS = { h:'p-high', m:'p-mid', l:'p-low' };
+const ST_CLS   = { todo:'b-todo', doing:'b-doing', done:'b-done', incomplete:'b-incomplete' };
+const PRIO_CLS   = { h:'p-high', m:'p-mid', l:'p-low' };
+const MV_LBL     = { todo:'▶ ເລີ່ມ', doing:'✓ ສຳເລັດ', done:'↺ ຣີເຊັດ', incomplete:'↺ ຣີເຊັດ' };
+const MV_CLS     = { todo:'btn-go', doing:'btn-accent', done:'', incomplete:'' };
 const PRIO_LABEL = { h:'🔥 ຮີບດ່ວນ', m:'⚡ ປານກາງ', l:'💤 ຕໍ່າ' };
-const MV_LBL = { todo:'▶ ເລີ່ມ', doing:'✓ ສຳເລັດ', done:'↺ ຣີເຊັດ', incomplete:'↺ ຣີເຊັດ' };
-const MV_CLS = { todo:'btn-go', doing:'btn-accent', done:'', incomplete:'' };
 
+/* ─── Auth ───────────────────────────────────────────────── */
 function handleLogin() {
-  const u = document.getElementById('userInput').value.trim();
-  const p = document.getElementById('passInput').value;
-  if ((u === 'admin' && p === '1234') || (u === 'guest' && p === '1111')) {
-    userRole = u; localStorage.setItem('userRole', u); localStorage.setItem('isLoggedIn', 'true');
-    startApp();
-  } else document.getElementById('login-msg').style.display = 'block';
+  const u   = document.getElementById('userInput').value.trim();
+  const p   = document.getElementById('passInput').value;
+  const msg = document.getElementById('login-msg');
+  let role  = '';
+  if      (u === 'admin' && p === '1234') role = 'admin';
+  else if (u === 'guest' && p === '1111') role = 'guest';
+  else { msg.style.display = 'block'; return; }
+  msg.style.display = 'none';
+  localStorage.setItem('userRole',   role);
+  localStorage.setItem('isLoggedIn', 'true');
+  userRole = role;
+  startApp();
 }
 
-function checkPreviousLogin() { if (localStorage.getItem('isLoggedIn') === 'true') { userRole = localStorage.getItem('userRole'); startApp(); } }
-function logout() { stopAutoRefresh(); localStorage.clear(); location.reload(); }
+function checkPreviousLogin() {
+  const isLoggedIn = localStorage.getItem('isLoggedIn');
+  const savedRole  = localStorage.getItem('userRole');
+  if (isLoggedIn === 'true' && savedRole) {
+    userRole = savedRole;
+    startApp();
+  }
+}
+
+function logout() {
+  if (confirm("ທ່ານຕ້ອງການອອກຈາກລະບົບແທ້ບໍ?")) {
+    stopAutoRefresh(); // Stop timers before logout
+    localStorage.clear();
+    location.reload();
+  }
+}
 
 function startApp() {
   document.getElementById('login-overlay').style.display = 'none';
   document.getElementById('user-tag').textContent = userRole.toUpperCase();
   if (userRole === 'admin') document.getElementById('admin-form').style.display = 'grid';
   loadFromSheet();
-  startAutoRefresh();
+  startAutoRefresh(); // Start the 5-min auto refresh system
 }
 
+/* ─── Data: Load / Save ──────────────────────────────────── */
 async function loadFromSheet() {
   const dot = document.getElementById('sync-dot');
   dot.className = 'sync-dot loading';
+  document.getElementById('sync-text').textContent = 'ກຳລັງໂຫຼດ...';
   try {
-    const res = await fetch(SCRIPT_URL + "?t=" + Date.now(), { redirect: 'follow' });
+    const res  = await fetch(SCRIPT_URL + "?t=" + Date.now(), { redirect: 'follow' });
     const data = await res.json();
     tasks = data.tasks.map(t => ({ ...t, id: Number(t.id) })).filter(t => t.name);
     users = data.users || [];
+
+    /* populate assignee multi-select */
     populateAssignDD();
+
     dot.className = 'sync-dot ok';
     document.getElementById('sync-text').textContent = 'Sync ສຳເລັດ';
     document.getElementById('sync-time').textContent = new Date().toLocaleTimeString('lo-LA');
-    nextRefreshAt = Date.now() + AUTO_REFRESH_MS;
     render();
-  } catch (e) { showToast("Sync ຜິດພາດ!"); }
+  } catch (e) {
+    dot.className = 'sync-dot';
+    document.getElementById('sync-text').textContent = 'ເຊື່ອມຕໍ່ບໍ່ໄດ້!';
+    showToast("ເຊື່ອມຕໍ່ຂໍ້ມູນຜິດພາດ!");
+  }
 }
 
 async function saveToSheet() {
-  try { await fetch(SCRIPT_URL, { method:'POST', redirect:'follow', body:JSON.stringify(tasks) }); showToast("ບັນທຶກແລ້ວ!"); } 
-  catch (e) { showToast("Error!"); }
+  try {
+    await fetch(SCRIPT_URL, { method:'POST', redirect:'follow', body:JSON.stringify(tasks) });
+    showToast("ບັນທຶກຂໍ້ມູນສຳເລັດ!");
+  } catch (e) {
+    showToast("ບັນທຶກຂໍ້ມູນຜິດພາດ!");
+  }
 }
+
+/* ─── Utility ────────────────────────────────────────────── */
+function fmtDate(d) {
+  if (!d || d === '—' || d === 'Invalid Date') return '—';
+  const dateStr = String(d).split('T')[0];
+  const p = dateStr.split('-');
+  return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : d;
+}
+
+function toDateObj(d) {
+  if (!d || d === '—') return null;
+  const s = String(d).split('T')[0];
+  const dt = new Date(s);
+  return isNaN(dt.getTime()) ? null : dt;
+}
+
+function daysDiff(d1, d2) {
+  /* d2 - d1 in whole days */
+  if (!d1 || !d2) return null;
+  return Math.round((d2.getTime() - d1.getTime()) / 86400000);
+}
+
+function showToast(m) {
+  const t = document.getElementById('toast');
+  t.textContent  = m;
+  t.className    = 'toast show';
+  setTimeout(() => { t.className = 'toast'; }, 2500);
+}
+
+/* ─── Person Stats Computation ───────────────────────────── */
+function splitAssignees(raw) {
+  /* Split "ສົມ, ໄຊ, ນາງ" → ['ສົມ','ໄຊ','ນາງ'], filter blanks */
+  return (raw || '').split(',').map(a => a.trim()).filter(a => a && a !== 'ບໍ່ລະບຸ');
+}
+
+function computePersonStats() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  /* collect unique individual names across all tasks */
+  const names = [...new Set(tasks.flatMap(t => splitAssignees(t.assignee)))];
+
+  return names.map(name => {
+    /* a task belongs to this person if their name is in the comma list */
+    const myTasks = tasks.filter(t => splitAssignees(t.assignee).includes(name));
+
+    const done       = myTasks.filter(t => t.status === 'done');
+    const incomplete = myTasks.filter(t => t.status === 'incomplete');
+    /* pending = ວຽກທີ່ຍັງບໍ່ສຳເລັດ ແລະ ຍັງບໍ່ຖືກ mark ເປັນ incomplete */
+    const pending    = myTasks.filter(t => t.status === 'todo' || t.status === 'doing');
+
+    /* Completed on-time: done AND completed_at <= due (both must exist) */
+    const onTime = done.filter(t => {
+      const ca  = toDateObj(t.completed_at);
+      const due = toDateObj(t.due);
+      if (!ca || !due) return false;
+      return ca <= due;
+    });
+
+    /* Completed late: done AND completed_at > due */
+    const late = done.filter(t => {
+      const ca  = toDateObj(t.completed_at);
+      const due = toDateObj(t.due);
+      if (!ca || !due) return false;
+      return ca > due;
+    });
+
+    /* For late tasks: calc days late per task */
+    const lateDays = late.map(t => {
+      const ca  = toDateObj(t.completed_at);
+      const due = toDateObj(t.due);
+      return daysDiff(due, ca); /* positive = how many days after deadline */
+    }).filter(x => x !== null);
+
+    const avgLateDays = lateDays.length
+      ? Math.round(lateDays.reduce((a, b) => a + b, 0) / lateDays.length)
+      : 0;
+    const maxLateDays = lateDays.length ? Math.max(...lateDays) : 0;
+
+    /* Pending overdue: not done AND due < today — include days overdue */
+    const overdueList = pending
+      .filter(t => { const due = toDateObj(t.due); return due && due < today; })
+      .map(t => {
+        const due = toDateObj(t.due);
+        return { name: t.name, days: daysDiff(due, today) };
+      })
+      .sort((a, b) => b.days - a.days); /* worst first */
+
+    return {
+      name,
+      photo:          (users.find(u => u.name.trim() === name) || {}).photo || '',
+      total:          myTasks.length,
+      done:         done.length,
+      onTime:       onTime.length,
+      late:         late.length,
+      avgLateDays,
+      maxLateDays,
+      pending:      pending.length,
+      onTrackPending: pending.length,   /* alias — pending is already on-track */
+      incomplete:   incomplete.length,  /* manually marked by admin */
+      overdue:      overdueList.length,
+      overdueList,
+    };
+  })
+  /* Sort: most pending first, then most late first */
+  .sort((a, b) => b.pending - a.pending || b.late - a.late);
+}
+
+/* ─── Person Stats Panel Render (NEW) ───────────────────── */
+function renderPersonPanel() {
+  const panel = document.getElementById('person-stats-panel');
+  const stats = computePersonStats();
+
+  if (!stats.length) {
+    panel.innerHTML = '<div class="no-task-msg">ຍັງບໍ່ມີຂໍ້ມູນ</div>';
+    return;
+  }
+
+  panel.innerHTML = stats.map((s, i) => {
+    const rankClass = i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : 'rank-other';
+    const rankIcon  = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1);
+
+    const avatarHtml = s.photo
+      ? `<img class="person-avatar" src="${imgProxy(s.photo)}" alt="${s.name}"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+         <div class="person-avatar-fallback" style="display:none">${s.name.charAt(0).toUpperCase()}</div>`
+      : `<div class="person-avatar-fallback">${s.name.charAt(0).toUpperCase()}</div>`;
+
+    const lateBlock = s.late > 0
+      ? `<div class="late-detail">⏰ ລ່າຊ້າ avg <b>${s.avgLateDays}</b> ມື້ · max <b>${s.maxLateDays}</b> ມື້</div>`
+      : '';
+
+    const overdueBlock = s.overdueList.length > 0
+      ? `<div class="overdue-detail">
+           <div style="font-weight:700;margin-bottom:4px;">⚠️ ຄ້າງເກີນກຳນົດ ${s.overdueList.length} ວຽກ:</div>
+           ${s.overdueList.map(o =>
+             `<div style="display:flex;justify-content:space-between;align-items:center;padding:2px 0;border-top:1px solid #fae7cb;">
+               <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${o.name}</span>
+               <span style="flex-shrink:0;margin-left:8px;font-weight:800;color:#c0392b;">+${o.days} ມື້</span>
+             </div>`
+           ).join('')}
+         </div>`
+      : '';
+
+    return `
+      <div class="person-card">
+        <div class="person-card-top">
+          <div class="rank-badge ${rankClass}">${rankIcon}</div>
+          ${avatarHtml}
+          <div class="person-name">${s.name}</div>
+          <div class="person-total">ທັງໝົດ ${s.total}</div>
+        </div>
+        <div class="person-stats-grid">
+          <div class="psg-item psg-ontime">
+            <b>${s.onTime}</b>
+            <span>ທັນກຳນົດ</span>
+          </div>
+          <div class="psg-item psg-late">
+            <b>${s.late}</b>
+            <span>ລ່າຊ້າ</span>
+          </div>
+          <div class="psg-item psg-pending">
+            <b>${s.onTrackPending}</b>
+            <span>ຄ້າງ</span>
+          </div>
+          <div class="psg-item psg-incomplete">
+            <b>${s.incomplete}</b>
+            <span>ບໍ່ສຳເລັດ</span>
+          </div>
+        </div>
+        ${lateBlock}
+        ${overdueBlock}
+      </div>`;
+  }).join('');
+}
+
+/* ─── Bar Chart ──────────────────────────────────────────── */
+function updateChart() {
+  const ctx      = document.getElementById('performanceChart').getContext('2d');
+  const stats    = computePersonStats(); /* reuse sorted stats */
+  const userList = stats.map(s => s.name);
+
+  const doneData       = stats.map(s => s.done);
+  const onTrackData    = stats.map(s => s.pending);       /* ວຽກຄ້າງ (todo/doing) */
+  const incompleteData = stats.map(s => s.incomplete);    /* ວຽກບໍ່ສຳເລັດ (admin marked) */
+
+  /* build tooltip details per dataset */
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  const onTrackDetails = userList.map(name => {
+    const list = tasks.filter(t =>
+      splitAssignees(t.assignee).includes(name) &&
+      (t.status === 'todo' || t.status === 'doing')
+    );
+    return list.length === 0 ? 'ບໍ່ມີວຽກຄ້າງ' : list.map(t => `• ${t.name}`).join('\n');
+  });
+
+  const incompleteDetails = userList.map(name => {
+    const list = tasks.filter(t =>
+      splitAssignees(t.assignee).includes(name) && t.status === 'incomplete'
+    );
+    return list.length === 0 ? 'ບໍ່ມີວຽກບໍ່ສຳເລັດ'
+      : list.map(t => `• ${t.name}`).join('\n');
+  });
+
+  if (myChart) {
+    myChart.destroy();
+    myChart = null;
+  }
+
+  if (!userList.length) return;
+
+  /* ── Preload avatar images via CORS proxy (fixes Google Drive CORS block) ── */
+  function proxyUrl(url) {
+    if (!url) return '';
+    /* convert lh3 → public thumbnail, then wrap in weserv for canvas CORS */
+    const publicUrl = toPublicDriveUrl(url);
+    const bare = publicUrl.replace(/^https?:\/\//, '');
+    return `https://images.weserv.nl/?url=${encodeURIComponent(bare)}&w=120&h=120&fit=cover&mask=circle&mtrim`;
+  }
+
+  let avatarImgs = stats.map(() => null);
+  let loadedCount = 0;
+  const totalWithPhoto = stats.filter(s => s.photo).length;
+
+  stats.forEach((s, i) => {
+    if (!s.photo) return;
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      avatarImgs[i] = img;
+      loadedCount++;
+      /* redraw chart once all images loaded */
+      if (myChart) myChart.draw();
+    };
+    img.onerror = () => { loadedCount++; };
+    img.src = proxyUrl(s.photo);
+  });
+
+  /* ── Custom plugin: draw circular avatars below each x-axis label ── */
+  const avatarXPlugin = {
+    id: 'avatarXPlugin',
+    afterDraw(chart) {
+      const { ctx, scales: { x } } = chart;
+      const sz = 52;
+      x.ticks.forEach((tick, i) => {
+        const xPos = x.getPixelForTick(i);
+        const yPos = chart.height - sz / 2 - 4;
+        const img  = avatarImgs[i];
+        /* clip to circle */
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(xPos, yPos, sz / 2, 0, Math.PI * 2);
+        ctx.clip();
+        if (img && img.complete && img.naturalWidth > 0) {
+          ctx.drawImage(img, xPos - sz / 2, yPos - sz / 2, sz, sz);
+        } else {
+          /* fallback coloured circle */
+          ctx.fillStyle = '#e8f5ee';
+          ctx.fillRect(xPos - sz / 2, yPos - sz / 2, sz, sz);
+          ctx.fillStyle = '#2d6a4f';
+          ctx.font = `bold 18px 'Noto Sans Lao', sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText((userList[i] || '?').charAt(0).toUpperCase(), xPos, yPos);
+        }
+        ctx.restore();
+        /* border ring */
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(xPos, yPos, sz / 2 + 2, 0, Math.PI * 2);
+        ctx.strokeStyle = '#c9e6d5';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        ctx.restore();
+      });
+    }
+  };
+
+  myChart = new Chart(ctx, {
+    type: 'bar',
+    plugins: [avatarXPlugin],
+    data: {
+      labels: userList,
+      datasets: [
+        {
+          label:           'ວຽກບໍ່ສຳເລັດ',
+          data:            incompleteData,
+          backgroundColor: '#f5c518',
+          borderRadius:    4,
+          details:         incompleteDetails,
+        },
+        {
+          label:           'ວຽກຄ້າງ',
+          data:            onTrackData,
+          backgroundColor: '#ff6b6b',
+          borderRadius:    4,
+          details:         onTrackDetails,
+        },
+        {
+          label:           'ວຽກສຳເລັດ',
+          data:            doneData,
+          backgroundColor: '#2d6a4f',
+          borderRadius:    4,
+        },
+      ],
+    },
+    options: {
+      responsive:          true,
+      maintainAspectRatio: false,
+      layout: {
+        padding: { top: 8, right: 12, bottom: 68, left: 0 },
+      },
+      scales: {
+        x: {
+          stacked: true,
+          ticks: {
+            font: { family: 'Noto Sans Lao', size: 11 },
+            maxRotation: 30,
+            autoSkip: false,
+          },
+          grid: { display: false },
+        },
+        y: {
+          stacked: true,
+          beginAtZero: true,
+          ticks: {
+            stepSize: 1,
+            font: { family: 'Noto Sans Lao', size: 11 },
+            precision: 0,
+          },
+          grid: { color: '#f0ede8' },
+        },
+      },
+      plugins: {
+        legend: {
+          position: 'top',
+          align: 'end',
+          labels: {
+            font: { family: 'Noto Sans Lao', size: 11 },
+            boxWidth: 12,
+            boxHeight: 12,
+            padding: 12,
+          },
+        },
+        tooltip: {
+          callbacks: {
+            afterLabel: function(context) {
+              if (context.dataset.label === 'ວຽກຄ້າງ') {
+                return '\nລາຍຊື່ວຽກຄ້າງ:\n' + context.dataset.details[context.dataIndex];
+              }
+              if (context.dataset.label === 'ວຽກບໍ່ສຳເລັດ') {
+                return '\nວຽກເກີນ Deadline:\n' + context.dataset.details[context.dataIndex];
+              }
+            },
+          },
+          bodyFont:  { family: 'Noto Sans Lao', size: 12 },
+          titleFont: { family: 'Noto Sans Lao', size: 12 },
+          padding:   10,
+        },
+      },
+    },
+  });
+}
+
+/* ─── Image Proxy helper (fixes Google Drive CORS for <img> tags) ── */
+function toPublicDriveUrl(url) {
+  if (!url) return '';
+  /* lh3.googleusercontent.com/d/FILE_ID  →  thumbnail URL (no auth needed) */
+  const lh3Match = url.match(/lh3\.googleusercontent\.com\/d\/([a-zA-Z0-9_\-]+)/);
+  if (lh3Match) return `https://drive.google.com/thumbnail?id=${lh3Match[1]}&sz=w200`;
+  /* drive.google.com/file/d/FILE_ID/view  →  thumbnail URL */
+  const driveMatch = url.match(/\/d\/([a-zA-Z0-9_\-]+)/);
+  if (driveMatch) return `https://drive.google.com/thumbnail?id=${driveMatch[1]}&sz=w200`;
+  return url;
+}
+
+function imgProxy(url) {
+  if (!url) return '';
+  /* convert to public thumbnail first, then wrap in weserv for CORS */
+  const publicUrl = toPublicDriveUrl(url);
+  const bare = publicUrl.replace(/^https?:\/\//, '');
+  return `https://images.weserv.nl/?url=${encodeURIComponent(bare)}&w=120&h=120&fit=cover`;
+}
+
+/* ─── Assignee Cell with Avatar ──────────────────────────── */
+function renderAssigneeCell(assigneeStr) {
+  const names = splitAssignees(assigneeStr);
+  if (!names.length) return assigneeStr || '—';
+  return names.map(name => {
+    const u     = users.find(x => x.name.trim() === name.trim());
+    const photo = u?.photo ? imgProxy(u.photo) : '';
+    const av    = photo
+      ? `<img class="tbl-avatar" src="${photo}" alt="${name}"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'">
+         <span class="tbl-avatar-fallback" style="display:none">${name.charAt(0).toUpperCase()}</span>`
+      : `<span class="tbl-avatar-fallback">${name.charAt(0).toUpperCase()}</span>`;
+    return `<span style="display:inline-flex;align-items:center;margin-right:6px;">${av}${name}</span>`;
+  }).join('');
+}
+
+/* ─── Main Render ────────────────────────────────────────── */
+function render() {
+  /* stats cards */
+  const tot = tasks.length;
+  const dn  = tasks.filter(t => t.status === 'done').length;
+  const pct = tot ? Math.round((dn / tot) * 100) : 0;
+
+  const incompleteCnt = tasks.filter(t => t.status === 'incomplete').length;
+
+  document.getElementById('stats-grid').innerHTML = `
+    <div class="stat-card"><b style="color:#1a4d8f">${tot}</b><p>ວຽກທັງໝົດ</p></div>
+    <div class="stat-card"><b style="color:#7a4f0a">${tasks.filter(t => t.status === 'doing').length}</b><p>ກຳລັງເຮັດ</p></div>
+    <div class="stat-card"><b style="color:var(--accent)">${dn}</b><p>ສຳເລັດ</p></div>
+    <div class="stat-card"><b style="color:#b8860b">${incompleteCnt}</b><p>ບໍ່ສຳເລັດ</p></div>`;
+
+  /* progress */
+  document.getElementById('prog-fill').style.width = pct + '%';
+  document.getElementById('prog-pct').textContent  = pct + '%';
+
+  /* status filter tabs */
+  const tabData = [
+    ['all',        'ທັງໝົດ',   tot],
+    ['todo',       'ລໍຖ້າ',    tasks.filter(t => t.status === 'todo').length],
+    ['doing',      'ດຳເນີນ',   tasks.filter(t => t.status === 'doing').length],
+    ['done',       'ສຳເລັດ',   dn],
+    ['incomplete', 'ບໍ່ສຳເລັດ', incompleteCnt],
+  ];
+  document.getElementById('statusFilters').innerHTML = tabData
+    .map(([f, l, c]) =>
+      `<button class="fp${filterSt === f ? ' on' : ''}" onclick="filterSt='${f}';render()">` +
+      `${l} <span class="cb">${c}</span></button>`)
+    .join('');
+
+  /* chart + person panel */
+  updateChart();
+  renderPersonPanel();
+
+  /* table */
+  const q  = (document.getElementById('searchInput').value || '').toLowerCase();
+  const ds = document.getElementById('dateStart').value;
+  const de = document.getElementById('dateEnd').value;
+
+  document.getElementById('tbody').innerHTML = tasks
+    .filter(t => {
+      const matchSearch = t.name.toLowerCase().includes(q) ||
+                          (t.assignee || '').toLowerCase().includes(q);
+      const matchStatus = filterSt === 'all' || t.status === filterSt;
+      let matchDate = true;
+      if (ds && de) matchDate = t.assigned >= ds && t.assigned <= de;
+      return matchSearch && matchStatus && matchDate;
+    })
+    .map((t, i) => {
+      const incBtn = (t.status !== 'incomplete' && t.status !== 'done')
+        ? `<button class="btn btn-sm" style="background:#fffbea;color:#b8860b;border:1px solid #f0d060;" onclick="markIncomplete(${t.id})" title="ໝາຍວ່າບໍ່ສຳເລັດ">⚠️ ບໍ່ສຳເລັດ</button>`
+        : '';
+      const actions = userRole === 'admin'
+        ? `<td style="display:flex;gap:6px;flex-wrap:wrap;">
+             <button class="btn btn-sm ${MV_CLS[t.status]}" onclick="moveTask(${t.id})">${MV_LBL[t.status]}</button>
+             ${incBtn}
+             <button class="btn btn-sm btn-wa" onclick="sendWA(${t.id})">WA</button>
+             <button class="btn btn-sm btn-danger" onclick="delTask(${t.id})" title="ລຶບ">ລຶບ</button>
+           </td>`
+        : `<td>🔒 View Only</td>`;
+
+      return `<tr>
+        <td style="color:#888;font-family:'DM Mono'">${i + 1}</td>
+        <td><b style="color:#111">${t.name}</b></td>
+        <td style="font-weight:500">${renderAssigneeCell(t.assignee)}</td>
+        <td>${fmtDate(t.assigned)}</td>
+        <td>${fmtDate(t.due)}</td>
+        <td style="color:var(--accent);font-weight:600">${fmtDate(t.completed_at)}</td>
+        <td><span class="badge ${PRIO_CLS[t.prio] || 'b-todo'}">${PRIO_LABEL[t.prio] || t.prio}</span></td>
+        <td><span class="badge ${ST_CLS[t.status]}">${ST_LABEL[t.status]}</span></td>
+        ${actions}
+      </tr>`;
+    })
+    .join('');
+}
+
+/* ─── Multi-Select Dropdown Logic ────────────────────────── */
+function populateAssignDD() {
+  const opts = document.getElementById('assignOpts');
+  if (!opts) return;
+  opts.innerHTML = users.map(u =>
+    `<label class="ms-opt" id="ms-opt-${CSS.escape(u.name)}">
+       <input type="checkbox" value="${u.name}" onchange="refreshAssignTags()"> ${u.name}
+     </label>`
+  ).join('');
+}
+
+function toggleAssignDD(e) {
+  e.stopPropagation();
+  const input = document.getElementById('assignInput');
+  const dd    = document.getElementById('assignDD');
+  const isOpen = dd.classList.contains('open');
+  dd.classList.toggle('open', !isOpen);
+  input.classList.toggle('open', !isOpen);
+}
+
+function refreshAssignTags() {
+  const checked  = [...document.querySelectorAll('#assignOpts input:checked')];
+  const tagsEl   = document.getElementById('assignTags');
+  const ph       = document.getElementById('assignPH');
+  const badge    = document.getElementById('task-preview-badge');
+  document.querySelectorAll('#assignOpts .ms-opt').forEach(row => {
+    row.classList.toggle('checked', row.querySelector('input').checked);
+  });
+  if (checked.length === 0) {
+    ph.style.display = '';
+    tagsEl.innerHTML = '';
+    if (badge) { badge.style.display = 'none'; }
+  } else {
+    ph.style.display = 'none';
+    tagsEl.innerHTML = checked.map(cb =>
+      `<span class="ms-tag">${cb.value}
+         <span class="ms-tag-x" onclick="removeAssignee(event,'${cb.value}')">×</span>
+       </span>`
+    ).join('');
+    if (badge) {
+      badge.style.display = '';
+      badge.textContent = checked.length > 1
+        ? `→ ສ້າງ ${checked.length} ວຽກ (1 ຄົນ / 1 ວຽກ)`
+        : `→ ສ້າງ 1 ວຽກ`;
+    }
+  }
+}
+
+function removeAssignee(e, name) {
+  e.stopPropagation();
+  const cb = document.querySelector(`#assignOpts input[value="${name}"]`);
+  if (cb) { cb.checked = false; refreshAssignTags(); }
+}
+
+function getSelectedAssignees() {
+  return [...document.querySelectorAll('#assignOpts input:checked')].map(cb => cb.value);
+}
+
+function clearAssignDD() {
+  document.querySelectorAll('#assignOpts input').forEach(cb => cb.checked = false);
+  refreshAssignTags();
+}
+
+/* close dropdown when clicking outside */
+document.addEventListener('click', function(e) {
+  const wrap = document.getElementById('assignWrap');
+  if (wrap && !wrap.contains(e.target)) {
+    document.getElementById('assignDD').classList.remove('open');
+    document.getElementById('assignInput').classList.remove('open');
+  }
+});
+
+/* ─── Task Actions ───────────────────────────────────────── */
+async function moveTask(id) {
+  const t = tasks.find(x => x.id === id);
+  if (!t) return;
+  const next  = ST_NEXT[t.status];
+  t.status    = next;
+  t.completed_at = next === 'done'
+    ? new Date().toISOString().split('T')[0]
+    : (next === 'todo' ? '' : t.completed_at);
+  render();
+  await saveToSheet();
+}
+
+async function markIncomplete(id) {
+  const t = tasks.find(x => x.id === id);
+  if (!t) return;
+  if (!confirm(`ໝາຍວ່າ "${t.name}" ເປັນ ວຽກບໍ່ສຳເລັດ ແທ້ບໍ?\n(admin ສາມາດ ↺ ຣີເຊັດ ກັບໄປ ລໍຖ້າ ໄດ້ພາຍຫຼັງ)`)) return;
+  t.status       = 'incomplete';
+  t.completed_at = '';
+  render();
+  await saveToSheet();
+  showToast(`⚠️ ໝາຍວ່າ "${t.name}" ບໍ່ສຳເລັດແລ້ວ`);
+}
+
+async function addTask() {
+  const nEl  = document.getElementById('fName');
+  const asEl = document.getElementById('fAssigned');
+  const dEl  = document.getElementById('fDue');
+  const pEl  = document.getElementById('fPrio');
+  const name = nEl.value.trim();
+  if (!name) return showToast("ໃສ່ຊື່ວຽກກ່ອນ!");
+
+  const selected = getSelectedAssignees();
+
+  if (selected.length === 0) {
+    tasks.push({
+      id:           Date.now(),
+      name,
+      assignee:     'ບໍ່ລະບຸ',
+      assigned:     asEl.value,
+      due:          dEl.value,
+      completed_at: '',
+      prio:         pEl.value,
+      status:       'todo',
+    });
+  } else {
+    const baseId = Date.now();
+    selected.forEach((personName, idx) => {
+      tasks.push({
+        id:           baseId + idx,
+        name,
+        assignee:     personName,
+        assigned:     asEl.value,
+        due:          dEl.value,
+        completed_at: '',
+        prio:         pEl.value,
+        status:       'todo',
+      });
+    });
+  }
+
+  render();
+  await saveToSheet();
+  nEl.value = ''; asEl.value = ''; dEl.value = ''; pEl.value = 'm';
+  clearAssignDD();
+  showToast(selected.length > 1 ? `ເພີ່ມວຽກສຳເລັດ! (${selected.length} ລາຍການ)` : "ເພີ່ມວຽກສຳເລັດ!");
+}
+
+async function delTask(id) {
+  if (!confirm("ລຶບແທ້ບໍ?")) return;
+  tasks = tasks.filter(t => t.id !== id);
+  render();
+  await saveToSheet();
+}
+
+function sendWA(id) {
+  const t = tasks.find(x => x.id === id);
+  if (!t) return;
+  const names = splitAssignees(t.assignee);
+  if (names.length === 0) return alert("ບໍ່ມີຜູ້ຮັບຜິດຊອບ");
+  names.forEach(aName => {
+    const u = users.find(x => x.name.replace(/\s+/g,'') === aName.replace(/\s+/g,''));
+    if (!u || !u.phone) return;
+    const msg = `ສະບາຍດີ ${aName},\nທ່ານມີວຽກ:\n📌 ວຽກ: ${t.name}\n📅 Deadline: ${fmtDate(t.due)}`;
+    window.open(`https://wa.me/${u.phone}?text=${encodeURIComponent(msg)}`, '_blank');
+  });
+}
+
+/* ─── [NEW] AUTO-REFRESH SYSTEM ─────────────────────────── */
+const AUTO_REFRESH_MS = 5 * 60 * 1000; 
+let refreshTimer   = null;
+let countdownTimer = null;
+let nextRefreshAt  = null;
 
 function startAutoRefresh() {
   stopAutoRefresh();
   nextRefreshAt = Date.now() + AUTO_REFRESH_MS;
   countdownTimer = setInterval(() => {
-    const diff = nextRefreshAt - Date.now();
-    const m = String(Math.floor(diff / 60000)).padStart(2, '0');
-    const s = String(Math.floor((diff % 60000) / 1000)).padStart(2, '0');
+    const secsLeft = Math.max(0, Math.round((nextRefreshAt - Date.now()) / 1000));
+    const m = String(Math.floor(secsLeft / 60)).padStart(2, '0');
+    const s = String(secsLeft % 60).padStart(2, '0');
     const el = document.getElementById('auto-refresh-countdown');
     if (el) el.textContent = `🔄 ໂຫຼດໃໝ່ໃນ ${m}:${s}`;
   }, 1000);
-  refreshTimer = setTimeout(async () => { await loadFromSheet(); startAutoRefresh(); }, AUTO_REFRESH_MS);
-}
-function stopAutoRefresh() { clearInterval(countdownTimer); clearTimeout(refreshTimer); }
 
-function splitAssignees(raw) { return (raw || '').split(',').map(a => a.trim()).filter(a => a && a !== 'ບໍ່ລະບຸ'); }
-function fmtDate(d) { if (!d || d === '—' || d === 'Invalid Date') return '—'; const p = String(d).split('T')[0].split('-'); return `${p[2]}/${p[1]}/${p[0]}`; }
-function toDateObj(d) { if (!d || d === '—') return null; const dt = new Date(String(d).split('T')[0]); return isNaN(dt.getTime()) ? null : dt; }
-function daysDiff(d1, d2) { return (d1 && d2) ? Math.round((d2 - d1) / 86400000) : null; }
-function showToast(m) { const t = document.getElementById('toast'); t.textContent = m; t.className = 'toast show'; setTimeout(() => t.className = 'toast', 2500); }
-
-function computePersonStats() {
-  const today = new Date(); today.setHours(0,0,0,0);
-  const names = [...new Set(tasks.flatMap(t => splitAssignees(t.assignee)))];
-  return names.map(name => {
-    const myTasks = tasks.filter(t => splitAssignees(t.assignee).includes(name));
-    const done = myTasks.filter(t => t.status === 'done');
-    const pending = myTasks.filter(t => t.status === 'todo' || t.status === 'doing');
-    const late = done.filter(t => { const ca = toDateObj(t.completed_at), due = toDateObj(t.due); return ca && due && ca > due; });
-    const overdueList = pending.filter(t => { const due = toDateObj(t.due); return due && due < today; })
-                               .map(t => ({ name: t.name, days: daysDiff(toDateObj(t.due), today) }));
-    return {
-      name, photo: (users.find(u => u.name.trim() === name) || {}).photo,
-      total: myTasks.length, done: done.length, onTime: done.length - late.length, late: late.length,
-      pending: pending.length, incomplete: myTasks.filter(t => t.status === 'incomplete').length, overdueList
-    };
-  }).sort((a, b) => b.pending - a.pending || b.late - a.late);
+  refreshTimer = setTimeout(async () => {
+    await loadFromSheet();
+    startAutoRefresh(); 
+  }, AUTO_REFRESH_MS);
 }
 
-function imgProxy(url) {
-  if(!url) return '';
-  const id = url.match(/\/d\/([a-zA-Z0-9_\-]+)/)?.[1] || url.match(/id=([a-zA-Z0-9_\-]+)/)?.[1];
-  return id ? `https://images.weserv.nl/?url=drive.google.com/thumbnail?id=${id}&w=120&h=120&fit=cover` : '';
+function stopAutoRefresh() {
+  if (refreshTimer) { clearTimeout(refreshTimer); refreshTimer = null; }
+  if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
 }
 
-function render() {
-  const stats = computePersonStats();
-  const tot = tasks.length, dn = tasks.filter(t => t.status === 'done').length;
-  const pct = tot ? Math.round((dn / tot) * 100) : 0;
-
-  document.getElementById('stats-grid').innerHTML = `
-    <div class="stat-card"><b>${tot}</b><p>ວຽກທັງໝົດ</p></div>
-    <div class="stat-card"><b>${tasks.filter(t => t.status === 'doing').length}</b><p>ກຳລັງເຮັດ</p></div>
-    <div class="stat-card"><b>${dn}</b><p>ສຳເລັດ</p></div>
-    <div class="stat-card"><b>${tasks.filter(t => t.status === 'incomplete').length}</b><p>ບໍ່ສຳເລັດ</p></div>`;
-
-  document.getElementById('prog-fill').style.width = pct + '%';
-  document.getElementById('prog-pct').textContent = pct + '%';
-
-  const q = document.getElementById('searchInput').value.toLowerCase();
-  const ds = document.getElementById('dateStart').value, de = document.getElementById('dateEnd').value;
-
-  document.getElementById('tbody').innerHTML = tasks
-    .filter(t => {
-      const matchSearch = t.name.toLowerCase().includes(q) || (t.assignee || '').toLowerCase().includes(q);
-      const matchStatus = filterSt === 'all' || t.status === filterSt;
-      let matchDate = (ds && de) ? (t.assigned >= ds && t.assigned <= de) : true;
-      return matchSearch && matchStatus && matchDate;
-    })
-    .map((t, i) => {
-      const incBtn = (t.status !== 'incomplete' && t.status !== 'done') 
-        ? `<button class="btn btn-sm" style="background:#fffbea;color:#b8860b;border:1px solid #f0d060;" onclick="markIncomplete(${t.id})" title="ບໍ່ສຳເລັດ">⚠️</button>` : '';
-      const actions = userRole === 'admin'
-        ? `<td>
-             <div class="action-cell">
-               <button class="btn btn-sm ${MV_CLS[t.status]}" onclick="moveTask(${t.id})">${MV_LBL[t.status]}</button>
-               ${incBtn}
-               <button class="btn btn-sm btn-wa" onclick="sendWA(${t.id})">WA</button>
-               <button class="btn btn-sm btn-danger" onclick="delTask(${t.id})">ລຶບ</button>
-             </div>
-           </td>` : `<td>🔒 View Only</td>`;
-
-      return `<tr>
-        <td>${i + 1}</td><td><b>${t.name}</b></td>
-        <td>${splitAssignees(t.assignee).map(n => {
-          const u = users.find(x => x.name.trim() === n), p = imgProxy(u?.photo);
-          return `<span style="display:inline-flex;align-items:center;margin-right:8px;">${p ? `<img class="tbl-avatar" src="${p}">` : `<span class="tbl-avatar-fallback">${n[0]}</span>`}${n}</span>`;
-        }).join('')}</td>
-        <td>${fmtDate(t.assigned)}</td><td>${fmtDate(t.due)}</td>
-        <td style="color:var(--accent);font-weight:600">${fmtDate(t.completed_at)}</td>
-        <td><span class="badge ${PRIO_CLS[t.prio]}">${PRIO_LABEL[t.prio]}</span></td>
-        <td><span class="badge ${ST_CLS[t.status]}">${ST_LABEL[t.status]}</span></td>
-        ${actions}
-      </tr>`;
-    }).join('');
-
-  updateChart(stats);
-  renderPersonPanel(stats);
-  const tabData = [['all','ທັງໝົດ',tot],['todo','ລໍຖ້າ',tasks.filter(t=>t.status==='todo').length],['doing','ດຳເນີນ',tasks.filter(t=>t.status==='doing').length],['done','ສຳເລັດ',dn],['incomplete','ບໍ່ສຳເລັດ',tasks.filter(t=>t.status==='incomplete').length]];
-  document.getElementById('statusFilters').innerHTML = tabData.map(([f,l,c]) => `<button class="fp${filterSt===f?' on':''}" onclick="filterSt='${f}';render()">${l} <span class="cb">${c}</span></button>`).join('');
+function manualRefresh() {
+  loadFromSheet();
+  startAutoRefresh(); // Restart timer when manually clicking refresh
 }
 
-function renderPersonPanel(stats) {
-  document.getElementById('person-stats-panel').innerHTML = stats.map((s, i) => `
-    <div class="person-card">
-      <div class="person-card-top">
-        <div class="rank-badge ${i<3?'rank-'+(i+1):'rank-other'}">${i+1}</div>
-        ${s.photo ? `<img class="person-avatar" src="${imgProxy(s.photo)}">` : `<div class="person-avatar-fallback">${s.name[0]}</div>`}
-        <div class="person-name">${s.name}</div><div class="person-total">ທັງໝົດ ${s.total}</div>
-      </div>
-      <div class="person-stats-grid">
-        <div class="psg-item psg-ontime"><b>${s.onTime}</b><span>ທັນ</span></div>
-        <div class="psg-item psg-late"><b>${s.late}</b><span>ຊ້າ</span></div>
-        <div class="psg-item psg-pending"><b>${s.pending}</b><span>ຄ້າງ</span></div>
-        <div class="psg-item psg-incomplete"><b>${s.incomplete}</b><span>ບໍ່ສຳເລັດ</span></div>
-      </div>
-      ${s.overdueList.length ? `<div class="overdue-detail">⚠️ ເກີນກຳນົດ ${s.overdueList.length} ວຽກ</div>` : ''}
-    </div>`).join('');
-}
-
-function updateChart(stats) {
-  const ctx = document.getElementById('performanceChart').getContext('2d');
-  if (myChart) myChart.destroy();
-  const avatarImgs = stats.map(s => { if(!s.photo) return null; const img = new Image(); img.src = imgProxy(s.photo); return img; });
-  const avatarPlugin = {
-    id: 'avatarPlugin',
-    afterDraw: (chart) => {
-      const { ctx, scales: { x } } = chart;
-      const size = 52;
-      x.ticks.forEach((tick, i) => {
-        const img = avatarImgs[i], xPos = x.getPixelForTick(i), yPos = chart.chartArea.bottom + 10;
-        ctx.save();
-        ctx.beginPath(); ctx.arc(xPos, yPos + size/2, size/2 + 2, 0, Math.PI * 2); ctx.fillStyle = '#c9e6d5'; ctx.fill();
-        ctx.beginPath(); ctx.arc(xPos, yPos + size/2, size/2, 0, Math.PI * 2); ctx.closePath(); ctx.clip();
-        if(img && img.complete && img.naturalWidth > 0) ctx.drawImage(img, xPos - size/2, yPos, size, size);
-        else { ctx.fillStyle = '#e8f5ee'; ctx.fillRect(xPos - size/2, yPos, size, size); ctx.fillStyle = '#2d6a4f'; ctx.font = 'bold 16px Noto Sans Lao'; ctx.textAlign='center'; ctx.fillText(stats[i].name[0], xPos, yPos + size/1.6); }
-        ctx.restore();
-      });
-    }
-  };
-  myChart = new Chart(ctx, {
-    type: 'bar',
-    plugins: [avatarPlugin],
-    data: {
-      labels: stats.map(s => s.name),
-      datasets: [
-        { label: 'ບໍ່ສຳເລັດ', data: stats.map(s=>s.incomplete), backgroundColor: '#f5c518', borderRadius: 4 },
-        { label: 'ວຽກຄ້າງ', data: stats.map(s=>s.pending), backgroundColor: '#ff6b6b', borderRadius: 4 },
-        { label: 'ວຽກສຳເລັດ', data: stats.map(s=>s.done), backgroundColor: '#2d6a4f', borderRadius: 4 }
-      ]
-    },
-    options: { responsive: true, maintainAspectRatio: false, layout: { padding: { bottom: 65 } }, scales: { x: { stacked: true, ticks:{ display:false } }, y: { stacked: true, beginAtZero: true, ticks:{ stepSize:1 } } }, plugins: { legend: { position: 'top', align: 'end' } } }
-  });
-}
-
-async function moveTask(id) { const t = tasks.find(x=>x.id===id); t.status = ST_NEXT[t.status]; t.completed_at = (t.status==='done') ? new Date().toISOString().split('T')[0] : ''; render(); await saveToSheet(); }
-async function markIncomplete(id) { if(!confirm("ໝາຍວ່າບໍ່ສຳເລັດແທ້ບໍ?")) return; const t = tasks.find(x=>x.id===id); t.status = 'incomplete'; t.completed_at = ''; render(); await saveToSheet(); }
-async function addTask() {
-  const n = document.getElementById('fName').value.trim(), sel = getSelected();
-  if(!n) return;
-  const baseId = Date.now();
-  (sel.length ? sel : ['ບໍ່ລະບຸ']).forEach((p, idx) => { tasks.push({ id: baseId+idx, name: n, assignee: p, status:'todo', completed_at: '', prio: document.getElementById('fPrio').value, assigned: document.getElementById('fAssigned').value, due: document.getElementById('fDue').value }); });
-  render(); await saveToSheet(); document.getElementById('fName').value=''; clearAssignDD();
-}
-async function delTask(id) { if(confirm("ລຶບແທ້ບໍ?")){ tasks=tasks.filter(t=>t.id!==id); render(); await saveToSheet(); } }
-function sendWA(id) {
-  const t = tasks.find(x=>x.id===id);
-  splitAssignees(t.assignee).forEach(n => {
-    const u = users.find(x => x.name.trim() === n);
-    if(u?.phone) window.open(`https://wa.me/${u.phone}?text=${encodeURIComponent('ວຽກ: '+t.name+' ກຳນົດ: '+fmtDate(t.due))}`);
-  });
-}
-
-function populateAssignDD() { document.getElementById('assignOpts').innerHTML = users.map(u => `<label class="ms-opt"><input type="checkbox" value="${u.name}" onchange="refreshTags()"> ${u.name}</label>`).join(''); }
-function toggleAssignDD(e) { e.stopPropagation(); document.getElementById('assignDD').classList.toggle('open'); document.getElementById('assignInput').classList.toggle('open'); }
-function refreshTags() {
-  const chk = [...document.querySelectorAll('#assignOpts input:checked')];
-  document.getElementById('assignTags').innerHTML = chk.map(c => `<span class="ms-tag">${c.value}</span>`).join('');
-  document.getElementById('assignPH').style.display = chk.length?'none':'block';
-}
-function getSelected() { return [...document.querySelectorAll('#assignOpts input:checked')].map(c=>c.value); }
-function clearAssignDD() { document.querySelectorAll('#assignOpts input').forEach(c=>c.checked=false); refreshTags(); }
-document.addEventListener('click', () => { document.getElementById('assignDD').classList.remove('open'); document.getElementById('assignInput').classList.remove('open'); });
-
+/* ─── Boot ───────────────────────────────────────────────── */
 checkPreviousLogin();
 </script>
 </body>
