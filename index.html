@@ -72,6 +72,13 @@
   .overdue-detail{margin-top:5px;font-size:10px;color:#7a4f0a;background:#fef5e7;border:1px solid #fae7cb;border-radius:6px;padding:5px 8px;}
   .no-task-msg{text-align:center;padding:30px;color:#aaa;font-size:12px;}
 
+  /* ===== Avatar ===== */
+  .person-avatar{width:42px;height:42px;border-radius:50%;object-fit:cover;border:2.5px solid #c9e6d5;flex-shrink:0;background:#eee;display:block;}
+  .person-avatar-fallback{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;background:linear-gradient(135deg,#e8f5ee,#c9e6d5);color:var(--accent);border:2.5px solid #c9e6d5;flex-shrink:0;}
+  /* Avatar in table assignee cell */
+  .tbl-avatar{width:26px;height:26px;border-radius:50%;object-fit:cover;border:1.5px solid var(--border);vertical-align:middle;margin-right:5px;background:#eee;}
+  .tbl-avatar-fallback{width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;background:#e8f5ee;color:var(--accent);border:1.5px solid #c9e6d5;vertical-align:middle;margin-right:5px;}
+
   /* ===== Forms & Toolbar ===== */
   .form-grid{display:none;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;background:var(--card);padding:20px;border-radius:var(--r);border:1px solid var(--border);margin-bottom:20px;align-items:end;box-shadow:0 2px 6px rgba(0,0,0,0.02);}
   .fg{display:flex;flex-direction:column;gap:6px;}
@@ -463,7 +470,8 @@ function computePersonStats() {
 
     return {
       name,
-      total:        myTasks.length,
+      photo:          (users.find(u => u.name.trim() === name) || {}).photo || '',
+      total:          myTasks.length,
       done:         done.length,
       onTime:       onTime.length,
       late:         late.length,
@@ -494,6 +502,12 @@ function renderPersonPanel() {
     const rankClass = i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : 'rank-other';
     const rankIcon  = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1);
 
+    const avatarHtml = s.photo
+      ? `<img class="person-avatar" src="${imgProxy(s.photo)}" alt="${s.name}"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+         <div class="person-avatar-fallback" style="display:none">${s.name.charAt(0).toUpperCase()}</div>`
+      : `<div class="person-avatar-fallback">${s.name.charAt(0).toUpperCase()}</div>`;
+
     const lateBlock = s.late > 0
       ? `<div class="late-detail">⏰ ລ່າຊ້າ avg <b>${s.avgLateDays}</b> ມື້ · max <b>${s.maxLateDays}</b> ມື້</div>`
       : '';
@@ -514,6 +528,7 @@ function renderPersonPanel() {
       <div class="person-card">
         <div class="person-card-top">
           <div class="rank-badge ${rankClass}">${rankIcon}</div>
+          ${avatarHtml}
           <div class="person-name">${s.name}</div>
           <div class="person-total">ທັງໝົດ ${s.total}</div>
         </div>
@@ -577,8 +592,76 @@ function updateChart() {
 
   if (!userList.length) return;
 
+  /* ── Preload avatar images via CORS proxy (fixes Google Drive CORS block) ── */
+  function proxyUrl(url) {
+    if (!url) return '';
+    /* convert lh3 → public thumbnail, then wrap in weserv for canvas CORS */
+    const publicUrl = toPublicDriveUrl(url);
+    const bare = publicUrl.replace(/^https?:\/\//, '');
+    return `https://images.weserv.nl/?url=${encodeURIComponent(bare)}&w=120&h=120&fit=cover&mask=circle&mtrim`;
+  }
+
+  let avatarImgs = stats.map(() => null);
+  let loadedCount = 0;
+  const totalWithPhoto = stats.filter(s => s.photo).length;
+
+  stats.forEach((s, i) => {
+    if (!s.photo) return;
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      avatarImgs[i] = img;
+      loadedCount++;
+      /* redraw chart once all images loaded */
+      if (myChart) myChart.draw();
+    };
+    img.onerror = () => { loadedCount++; };
+    img.src = proxyUrl(s.photo);
+  });
+
+  /* ── Custom plugin: draw circular avatars below each x-axis label ── */
+  const avatarXPlugin = {
+    id: 'avatarXPlugin',
+    afterDraw(chart) {
+      const { ctx, scales: { x } } = chart;
+      const sz = 52;
+      x.ticks.forEach((tick, i) => {
+        const xPos = x.getPixelForTick(i);
+        const yPos = chart.height - sz / 2 - 4;
+        const img  = avatarImgs[i];
+        /* clip to circle */
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(xPos, yPos, sz / 2, 0, Math.PI * 2);
+        ctx.clip();
+        if (img && img.complete && img.naturalWidth > 0) {
+          ctx.drawImage(img, xPos - sz / 2, yPos - sz / 2, sz, sz);
+        } else {
+          /* fallback coloured circle */
+          ctx.fillStyle = '#e8f5ee';
+          ctx.fillRect(xPos - sz / 2, yPos - sz / 2, sz, sz);
+          ctx.fillStyle = '#2d6a4f';
+          ctx.font = `bold 18px 'Noto Sans Lao', sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText((userList[i] || '?').charAt(0).toUpperCase(), xPos, yPos);
+        }
+        ctx.restore();
+        /* border ring */
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(xPos, yPos, sz / 2 + 2, 0, Math.PI * 2);
+        ctx.strokeStyle = '#c9e6d5';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        ctx.restore();
+      });
+    }
+  };
+
   myChart = new Chart(ctx, {
     type: 'bar',
+    plugins: [avatarXPlugin],
     data: {
       labels: userList,
       datasets: [
@@ -608,7 +691,7 @@ function updateChart() {
       responsive:          true,
       maintainAspectRatio: false,
       layout: {
-        padding: { top: 8, right: 12, bottom: 0, left: 0 },
+        padding: { top: 8, right: 12, bottom: 68, left: 0 },
       },
       scales: {
         x: {
@@ -660,6 +743,42 @@ function updateChart() {
       },
     },
   });
+}
+
+/* ─── Image Proxy helper (fixes Google Drive CORS for <img> tags) ── */
+function toPublicDriveUrl(url) {
+  if (!url) return '';
+  /* lh3.googleusercontent.com/d/FILE_ID  →  thumbnail URL (no auth needed) */
+  const lh3Match = url.match(/lh3\.googleusercontent\.com\/d\/([a-zA-Z0-9_\-]+)/);
+  if (lh3Match) return `https://drive.google.com/thumbnail?id=${lh3Match[1]}&sz=w200`;
+  /* drive.google.com/file/d/FILE_ID/view  →  thumbnail URL */
+  const driveMatch = url.match(/\/d\/([a-zA-Z0-9_\-]+)/);
+  if (driveMatch) return `https://drive.google.com/thumbnail?id=${driveMatch[1]}&sz=w200`;
+  return url;
+}
+
+function imgProxy(url) {
+  if (!url) return '';
+  /* convert to public thumbnail first, then wrap in weserv for CORS */
+  const publicUrl = toPublicDriveUrl(url);
+  const bare = publicUrl.replace(/^https?:\/\//, '');
+  return `https://images.weserv.nl/?url=${encodeURIComponent(bare)}&w=120&h=120&fit=cover`;
+}
+
+/* ─── Assignee Cell with Avatar ──────────────────────────── */
+function renderAssigneeCell(assigneeStr) {
+  const names = splitAssignees(assigneeStr);
+  if (!names.length) return assigneeStr || '—';
+  return names.map(name => {
+    const u     = users.find(x => x.name.trim() === name.trim());
+    const photo = u?.photo ? imgProxy(u.photo) : '';
+    const av    = photo
+      ? `<img class="tbl-avatar" src="${photo}" alt="${name}"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'">
+         <span class="tbl-avatar-fallback" style="display:none">${name.charAt(0).toUpperCase()}</span>`
+      : `<span class="tbl-avatar-fallback">${name.charAt(0).toUpperCase()}</span>`;
+    return `<span style="display:inline-flex;align-items:center;margin-right:6px;">${av}${name}</span>`;
+  }).join('');
 }
 
 /* ─── Main Render ────────────────────────────────────────── */
@@ -730,7 +849,7 @@ function render() {
       return `<tr>
         <td style="color:#888;font-family:'DM Mono'">${i + 1}</td>
         <td><b style="color:#111">${t.name}</b></td>
-        <td style="font-weight:500">${t.assignee}</td>
+        <td style="font-weight:500">${renderAssigneeCell(t.assignee)}</td>
         <td>${fmtDate(t.assigned)}</td>
         <td>${fmtDate(t.due)}</td>
         <td style="color:var(--accent);font-weight:600">${fmtDate(t.completed_at)}</td>
