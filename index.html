@@ -871,7 +871,8 @@ function getFilteredTasks() {
     let matchDate = true;
     if (ds && de) matchDate = t.assigned >= ds && t.assigned <= de;
     return matchSearch && matchStatus && matchDate;
-  });
+  })
+    .sort((a,b)=> b.id - a.id);
 }
 
 /* ─── Render Table + Pagination Only ────────────────────────  */
