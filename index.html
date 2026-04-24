@@ -17,6 +17,8 @@
   .login-box input{width:100%;padding:12px;margin-bottom:12px;border:1px solid #dedad3;border-radius:8px;outline:none;transition:0.2s;font-family:inherit;}
   .login-box input:focus{border-color:var(--accent);}
   .btn-login{width:100%;padding:12px;background:var(--accent);color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px;font-family:inherit;}
+  .btn-login:disabled{background:#aaa;cursor:not-allowed;}
+  #login-spinner{display:none;margin-top:10px;font-size:12px;color:#7a7670;}
 
   /* ===== Layout ===== */
   .header{background:var(--card);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
@@ -36,13 +38,13 @@
   .prog-bar{flex:1;height:8px;background:#ddd;border-radius:10px;overflow:hidden;}
   .prog-fill{height:100%;background:var(--accent);transition:0.4s;}
 
-  /* ===== Chart + Stats Row (NEW LAYOUT) ===== */
+  /* ===== Chart + Stats Row ===== */
   .chart-row{display:flex;gap:15px;margin-bottom:15px;height:420px;}
   .chart-box{flex:1;background:var(--card);border-radius:var(--r);padding:16px 16px 16px 16px;border:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;min-width:0;}
   .chart-canvas-wrap{flex:1;position:relative;min-height:0;width:100%;}
   .chart-canvas-wrap canvas{position:absolute;top:0;left:0;width:100%!important;height:100%!important;}
 
-  /* ===== Person Stats Panel (NEW) ===== */
+  /* ===== Person Stats Panel ===== */
   .person-panel{width:340px;flex-shrink:0;background:var(--card);border-radius:var(--r);border:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
   .person-panel-header{padding:13px 16px;border-bottom:1px solid var(--border);background:#f8f9fa;flex-shrink:0;}
   .person-panel-header h3{font-size:13px;font-weight:700;color:#1c1a17;}
@@ -75,7 +77,6 @@
   /* ===== Avatar ===== */
   .person-avatar{width:42px;height:42px;border-radius:50%;object-fit:cover;border:2.5px solid #c9e6d5;flex-shrink:0;background:#eee;display:block;}
   .person-avatar-fallback{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;background:linear-gradient(135deg,#e8f5ee,#c9e6d5);color:var(--accent);border:2.5px solid #c9e6d5;flex-shrink:0;}
-  /* Avatar in table assignee cell */
   .tbl-avatar{width:26px;height:26px;border-radius:50%;object-fit:cover;border:1.5px solid var(--border);vertical-align:middle;margin-right:5px;background:#eee;}
   .tbl-avatar-fallback{width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;background:#e8f5ee;color:var(--accent);border:1.5px solid #c9e6d5;vertical-align:middle;margin-right:5px;}
 
@@ -156,15 +157,17 @@
 </head>
 <body>
 
+<!-- ===== Login Overlay ===== -->
 <div id="login-overlay">
   <div class="login-box">
     <span style="font-size:50px;">🚀</span>
     <h2 style="margin:15px 0;">R&amp;D Tracker</h2>
     <p style="color:#7a7670;font-size:12px;margin-bottom:20px;">ກະລຸນາເຂົ້າສູ່ລະບົບເພື່ອຈັດການວຽກ</p>
-    <input type="text" id="userInput" placeholder="ຊື່ຜູ້ໃຊ້ (admin/guest)" onkeydown="if(event.key==='Enter')handleLogin()">
+    <input type="text" id="userInput" placeholder="ຊື່ຜູ້ໃຊ້" onkeydown="if(event.key==='Enter')handleLogin()">
     <input type="password" id="passInput" placeholder="ລະຫັດຜ່ານ" onkeydown="if(event.key==='Enter')handleLogin()">
-    <button class="btn-login" onclick="handleLogin()">ເຂົ້າສູ່ລະບົບ</button>
-    <p id="login-msg" style="color:#9b2323;font-size:11px;margin-top:10px;display:none;">ຊື່ ຫຼື ລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ!</p>
+    <button class="btn-login" id="loginBtn" onclick="handleLogin()">ເຂົ້າສູ່ລະບົບ</button>
+    <p id="login-msg" style="color:#9b2323;font-size:11px;margin-top:10px;display:none;"></p>
+    <p id="login-spinner">⏳ ກຳລັງກວດສອບ...</p>
   </div>
 </div>
 
@@ -173,6 +176,7 @@
     <span style="font-size:24px;">📝</span>
     <b style="font-size:16px;">ກະດານຕິດຕາມວຽກ R&amp;D</b>
     <span id="user-tag" style="font-size:10px;background:#eee;padding:2px 8px;border-radius:4px;margin-left:5px;font-weight:700;color:#555;"></span>
+    <span id="user-name-tag" style="font-size:11px;color:#2d6a4f;font-weight:600;"></span>
   </div>
   <div style="display:flex;gap:8px;">
     <button class="btn" onclick="loadFromSheet()">🔄 ໂຫຼດໃໝ່</button>
@@ -279,13 +283,14 @@
 
 <script>
 /* ─── Config ─────────────────────────────────────────────── */
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyRX3NSAotb7Zjh5ESN4cDpj79mKW2EHyuE68cdiqvuzZeqjduvy4PKAL-Qx6h9Gp0c/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbytFx0nq4Gj9RtztrnuJVUgwANoPysoc4CiC33VoWEWyKK_GKyqlCONCuqPzMiTAqrFWA/exec";
 
 let tasks   = [];
 let users   = [];
 let filterSt = 'all';
 let myChart  = null;
 let userRole = 'guest';
+let userName = '';
 
 /* ─── Lookup Maps ─────────────────────────────────────────── */
 const ST_NEXT  = { todo:'doing', doing:'done', done:'todo', incomplete:'todo' };
@@ -296,35 +301,72 @@ const MV_LBL     = { todo:'▶ ເລີ່ມ', doing:'✓ ສຳເລັດ',
 const MV_CLS     = { todo:'btn-go', doing:'btn-accent', done:'', incomplete:'' };
 const PRIO_LABEL = { h:'🔥 ຮີບດ່ວນ', m:'⚡ ປານກາງ', l:'💤 ຕໍ່າ' };
 
-/* ─── Auth ───────────────────────────────────────────────── */
-function handleLogin() {
+/* ─── Auth — Server-Side Login (GET + query params to avoid CORS) ── */
+async function handleLogin() {
   const u   = document.getElementById('userInput').value.trim();
   const p   = document.getElementById('passInput').value;
   const msg = document.getElementById('login-msg');
-  let role  = '';
-  if      (u === 'admin' && p === '1234') role = 'admin';
-  else if (u === 'guest' && p === '1111') role = 'guest';
-  else { msg.style.display = 'block'; return; }
+  const btn = document.getElementById('loginBtn');
+  const spinner = document.getElementById('login-spinner');
+
+  if (!u || !p) {
+    msg.textContent = 'ກະລຸນາໃສ່ຊື່ຜູ້ໃຊ້ ແລະ ລະຫັດຜ່ານ!';
+    msg.style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true;
+  spinner.style.display = 'block';
   msg.style.display = 'none';
-  localStorage.setItem('userRole',   role);
-  localStorage.setItem('isLoggedIn', 'true');
-  userRole = role;
-  startApp();
+
+  try {
+    // ── ສົ່ງ credentials ຜ່ານ GET query string (ຫຼີກລ້ຽງ CORS preflight) ──
+    const url = SCRIPT_URL
+      + '?action=login'
+      + '&username=' + encodeURIComponent(u)
+      + '&password=' + encodeURIComponent(p)
+      + '&t=' + Date.now();
+
+    const res  = await fetch(url, { redirect: 'follow' });
+    const data = await res.json();
+
+    if (data.ok) {
+      msg.style.display = 'none';
+      sessionStorage.setItem('userRole',   data.role);
+      sessionStorage.setItem('userName',   data.name);
+      sessionStorage.setItem('isLoggedIn', 'true');
+      userRole = data.role;
+      userName = data.name;
+      startApp();
+    } else {
+      msg.textContent = data.msg || 'ຊື່ ຫຼື ລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ!';
+      msg.style.display = 'block';
+    }
+  } catch(e) {
+    msg.textContent = 'ເຊື່ອມຕໍ່ Server ບໍ່ໄດ້ — ກະລຸນາລອງໃໝ່!';
+    msg.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    spinner.style.display = 'none';
+  }
 }
 
+// ── ໃຊ້ sessionStorage (ຫາຍເມື່ອປິດ browser tab) ──
 function checkPreviousLogin() {
-  const isLoggedIn = localStorage.getItem('isLoggedIn');
-  const savedRole  = localStorage.getItem('userRole');
+  const isLoggedIn = sessionStorage.getItem('isLoggedIn');
+  const savedRole  = sessionStorage.getItem('userRole');
+  const savedName  = sessionStorage.getItem('userName');
   if (isLoggedIn === 'true' && savedRole) {
     userRole = savedRole;
+    userName = savedName || '';
     startApp();
   }
 }
 
 function logout() {
   if (confirm("ທ່ານຕ້ອງການອອກຈາກລະບົບແທ້ບໍ?")) {
-    stopAutoRefresh(); // Stop timers before logout
-    localStorage.clear();
+    stopAutoRefresh();
+    sessionStorage.clear();
     location.reload();
   }
 }
@@ -332,9 +374,10 @@ function logout() {
 function startApp() {
   document.getElementById('login-overlay').style.display = 'none';
   document.getElementById('user-tag').textContent = userRole.toUpperCase();
+  document.getElementById('user-name-tag').textContent = userName ? `· ${userName}` : '';
   if (userRole === 'admin') document.getElementById('admin-form').style.display = 'grid';
   loadFromSheet();
-  startAutoRefresh(); // Start the 5-min auto refresh system
+  startAutoRefresh();
 }
 
 /* ─── Data: Load / Save ──────────────────────────────────── */
@@ -348,7 +391,6 @@ async function loadFromSheet() {
     tasks = data.tasks.map(t => ({ ...t, id: Number(t.id) })).filter(t => t.name);
     users = data.users || [];
 
-    /* populate assignee multi-select */
     populateAssignDD();
 
     dot.className = 'sync-dot ok';
@@ -387,7 +429,6 @@ function toDateObj(d) {
 }
 
 function daysDiff(d1, d2) {
-  /* d2 - d1 in whole days */
   if (!d1 || !d2) return null;
   return Math.round((d2.getTime() - d1.getTime()) / 86400000);
 }
@@ -401,7 +442,6 @@ function showToast(m) {
 
 /* ─── Person Stats Computation ───────────────────────────── */
 function splitAssignees(raw) {
-  /* Split "ສົມ, ໄຊ, ນາງ" → ['ສົມ','ໄຊ','ນາງ'], filter blanks */
   return (raw || '').split(',').map(a => a.trim()).filter(a => a && a !== 'ບໍ່ລະບຸ');
 }
 
@@ -409,19 +449,15 @@ function computePersonStats() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  /* collect unique individual names across all tasks */
   const names = [...new Set(tasks.flatMap(t => splitAssignees(t.assignee)))];
 
   return names.map(name => {
-    /* a task belongs to this person if their name is in the comma list */
     const myTasks = tasks.filter(t => splitAssignees(t.assignee).includes(name));
 
     const done       = myTasks.filter(t => t.status === 'done');
     const incomplete = myTasks.filter(t => t.status === 'incomplete');
-    /* pending = ວຽກທີ່ຍັງບໍ່ສຳເລັດ ແລະ ຍັງບໍ່ຖືກ mark ເປັນ incomplete */
     const pending    = myTasks.filter(t => t.status === 'todo' || t.status === 'doing');
 
-    /* Completed on-time: done AND completed_at <= due (both must exist) */
     const onTime = done.filter(t => {
       const ca  = toDateObj(t.completed_at);
       const due = toDateObj(t.due);
@@ -429,7 +465,6 @@ function computePersonStats() {
       return ca <= due;
     });
 
-    /* Completed late: done AND completed_at > due */
     const late = done.filter(t => {
       const ca  = toDateObj(t.completed_at);
       const due = toDateObj(t.due);
@@ -437,11 +472,10 @@ function computePersonStats() {
       return ca > due;
     });
 
-    /* For late tasks: calc days late per task */
     const lateDays = late.map(t => {
       const ca  = toDateObj(t.completed_at);
       const due = toDateObj(t.due);
-      return daysDiff(due, ca); /* positive = how many days after deadline */
+      return daysDiff(due, ca);
     }).filter(x => x !== null);
 
     const avgLateDays = lateDays.length
@@ -449,36 +483,34 @@ function computePersonStats() {
       : 0;
     const maxLateDays = lateDays.length ? Math.max(...lateDays) : 0;
 
-    /* Pending overdue: not done AND due < today — include days overdue */
     const overdueList = pending
       .filter(t => { const due = toDateObj(t.due); return due && due < today; })
       .map(t => {
         const due = toDateObj(t.due);
         return { name: t.name, days: daysDiff(due, today) };
       })
-      .sort((a, b) => b.days - a.days); /* worst first */
+      .sort((a, b) => b.days - a.days);
 
     return {
       name,
       photo:          (users.find(u => u.name.trim() === name) || {}).photo || '',
       total:          myTasks.length,
-      done:         done.length,
-      onTime:       onTime.length,
-      late:         late.length,
+      done:           done.length,
+      onTime:         onTime.length,
+      late:           late.length,
       avgLateDays,
       maxLateDays,
-      pending:      pending.length,
-      onTrackPending: pending.length,   /* alias — pending is already on-track */
-      incomplete:   incomplete.length,  /* manually marked by admin */
-      overdue:      overdueList.length,
+      pending:        pending.length,
+      onTrackPending: pending.length,
+      incomplete:     incomplete.length,
+      overdue:        overdueList.length,
       overdueList,
     };
   })
-  /* Sort: most pending first, then most late first */
   .sort((a, b) => b.pending - a.pending || b.late - a.late);
 }
 
-/* ─── Person Stats Panel Render (NEW) ───────────────────── */
+/* ─── Person Stats Panel Render ─────────────────────────── */
 function renderPersonPanel() {
   const panel = document.getElementById('person-stats-panel');
   const stats = computePersonStats();
@@ -523,22 +555,10 @@ function renderPersonPanel() {
           <div class="person-total">ທັງໝົດ ${s.total}</div>
         </div>
         <div class="person-stats-grid">
-          <div class="psg-item psg-ontime">
-            <b>${s.onTime}</b>
-            <span>ທັນກຳນົດ</span>
-          </div>
-          <div class="psg-item psg-late">
-            <b>${s.late}</b>
-            <span>ລ່າຊ້າ</span>
-          </div>
-          <div class="psg-item psg-pending">
-            <b>${s.onTrackPending}</b>
-            <span>ຄ້າງ</span>
-          </div>
-          <div class="psg-item psg-incomplete">
-            <b>${s.incomplete}</b>
-            <span>ບໍ່ສຳເລັດ</span>
-          </div>
+          <div class="psg-item psg-ontime"><b>${s.onTime}</b><span>ທັນກຳນົດ</span></div>
+          <div class="psg-item psg-late"><b>${s.late}</b><span>ລ່າຊ້າ</span></div>
+          <div class="psg-item psg-pending"><b>${s.onTrackPending}</b><span>ຄ້າງ</span></div>
+          <div class="psg-item psg-incomplete"><b>${s.incomplete}</b><span>ບໍ່ສຳເລັດ</span></div>
         </div>
         ${lateBlock}
         ${overdueBlock}
@@ -549,14 +569,13 @@ function renderPersonPanel() {
 /* ─── Bar Chart ──────────────────────────────────────────── */
 function updateChart() {
   const ctx      = document.getElementById('performanceChart').getContext('2d');
-  const stats    = computePersonStats(); /* reuse sorted stats */
+  const stats    = computePersonStats();
   const userList = stats.map(s => s.name);
 
   const doneData       = stats.map(s => s.done);
-  const onTrackData    = stats.map(s => s.pending);       /* ວຽກຄ້າງ (todo/doing) */
-  const incompleteData = stats.map(s => s.incomplete);    /* ວຽກບໍ່ສຳເລັດ (admin marked) */
+  const onTrackData    = stats.map(s => s.pending);
+  const incompleteData = stats.map(s => s.incomplete);
 
-  /* build tooltip details per dataset */
   const today = new Date(); today.setHours(0,0,0,0);
 
   const onTrackDetails = userList.map(name => {
@@ -575,41 +594,27 @@ function updateChart() {
       : list.map(t => `• ${t.name}`).join('\n');
   });
 
-  if (myChart) {
-    myChart.destroy();
-    myChart = null;
-  }
-
+  if (myChart) { myChart.destroy(); myChart = null; }
   if (!userList.length) return;
 
-  /* ── Preload avatar images via CORS proxy (fixes Google Drive CORS block) ── */
   function proxyUrl(url) {
     if (!url) return '';
-    /* convert lh3 → public thumbnail, then wrap in weserv for canvas CORS */
     const publicUrl = toPublicDriveUrl(url);
     const bare = publicUrl.replace(/^https?:\/\//, '');
     return `https://images.weserv.nl/?url=${encodeURIComponent(bare)}&w=120&h=120&fit=cover&mask=circle&mtrim`;
   }
 
   let avatarImgs = stats.map(() => null);
-  let loadedCount = 0;
-  const totalWithPhoto = stats.filter(s => s.photo).length;
 
   stats.forEach((s, i) => {
     if (!s.photo) return;
     const img = new Image();
     img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      avatarImgs[i] = img;
-      loadedCount++;
-      /* redraw chart once all images loaded */
-      if (myChart) myChart.draw();
-    };
-    img.onerror = () => { loadedCount++; };
+    img.onload = () => { avatarImgs[i] = img; if (myChart) myChart.draw(); };
+    img.onerror = () => {};
     img.src = proxyUrl(s.photo);
   });
 
-  /* ── Custom plugin: draw circular avatars below each x-axis label ── */
   const avatarXPlugin = {
     id: 'avatarXPlugin',
     afterDraw(chart) {
@@ -619,7 +624,6 @@ function updateChart() {
         const xPos = x.getPixelForTick(i);
         const yPos = chart.height - sz / 2 - 4;
         const img  = avatarImgs[i];
-        /* clip to circle */
         ctx.save();
         ctx.beginPath();
         ctx.arc(xPos, yPos, sz / 2, 0, Math.PI * 2);
@@ -627,7 +631,6 @@ function updateChart() {
         if (img && img.complete && img.naturalWidth > 0) {
           ctx.drawImage(img, xPos - sz / 2, yPos - sz / 2, sz, sz);
         } else {
-          /* fallback coloured circle */
           ctx.fillStyle = '#e8f5ee';
           ctx.fillRect(xPos - sz / 2, yPos - sz / 2, sz, sz);
           ctx.fillStyle = '#2d6a4f';
@@ -637,7 +640,6 @@ function updateChart() {
           ctx.fillText((userList[i] || '?').charAt(0).toUpperCase(), xPos, yPos);
         }
         ctx.restore();
-        /* border ring */
         ctx.save();
         ctx.beginPath();
         ctx.arc(xPos, yPos, sz / 2 + 2, 0, Math.PI * 2);
@@ -655,93 +657,56 @@ function updateChart() {
     data: {
       labels: userList,
       datasets: [
-        {
-          label:           'ວຽກບໍ່ສຳເລັດ',
-          data:            incompleteData,
-          backgroundColor: '#f5c518',
-          borderRadius:    4,
-          details:         incompleteDetails,
-        },
-        {
-          label:           'ວຽກຄ້າງ',
-          data:            onTrackData,
-          backgroundColor: '#ff6b6b',
-          borderRadius:    4,
-          details:         onTrackDetails,
-        },
-        {
-          label:           'ວຽກສຳເລັດ',
-          data:            doneData,
-          backgroundColor: '#2d6a4f',
-          borderRadius:    4,
-        },
+        { label:'ວຽກບໍ່ສຳເລັດ', data:incompleteData, backgroundColor:'#f5c518', borderRadius:4, details:incompleteDetails },
+        { label:'ວຽກຄ້າງ',       data:onTrackData,    backgroundColor:'#ff6b6b', borderRadius:4, details:onTrackDetails },
+        { label:'ວຽກສຳເລັດ',    data:doneData,        backgroundColor:'#2d6a4f', borderRadius:4 },
       ],
     },
     options: {
       responsive:          true,
       maintainAspectRatio: false,
-      layout: {
-        padding: { top: 8, right: 12, bottom: 68, left: 0 },
-      },
+      layout: { padding: { top:8, right:12, bottom:68, left:0 } },
       scales: {
         x: {
           stacked: true,
-          ticks: {
-            font: { family: 'Noto Sans Lao', size: 11 },
-            maxRotation: 30,
-            autoSkip: false,
-          },
-          grid: { display: false },
+          ticks: { font:{ family:'Noto Sans Lao', size:11 }, maxRotation:30, autoSkip:false },
+          grid: { display:false },
         },
         y: {
           stacked: true,
           beginAtZero: true,
-          ticks: {
-            stepSize: 1,
-            font: { family: 'Noto Sans Lao', size: 11 },
-            precision: 0,
-          },
-          grid: { color: '#f0ede8' },
+          ticks: { stepSize:1, font:{ family:'Noto Sans Lao', size:11 }, precision:0 },
+          grid: { color:'#f0ede8' },
         },
       },
       plugins: {
         legend: {
-          position: 'top',
-          align: 'end',
-          labels: {
-            font: { family: 'Noto Sans Lao', size: 11 },
-            boxWidth: 12,
-            boxHeight: 12,
-            padding: 12,
-          },
+          position:'top', align:'end',
+          labels: { font:{ family:'Noto Sans Lao', size:11 }, boxWidth:12, boxHeight:12, padding:12 },
         },
         tooltip: {
           callbacks: {
             afterLabel: function(context) {
-              if (context.dataset.label === 'ວຽກຄ້າງ') {
+              if (context.dataset.label === 'ວຽກຄ້າງ')
                 return '\nລາຍຊື່ວຽກຄ້າງ:\n' + context.dataset.details[context.dataIndex];
-              }
-              if (context.dataset.label === 'ວຽກບໍ່ສຳເລັດ') {
+              if (context.dataset.label === 'ວຽກບໍ່ສຳເລັດ')
                 return '\nວຽກເກີນ Deadline:\n' + context.dataset.details[context.dataIndex];
-              }
             },
           },
-          bodyFont:  { family: 'Noto Sans Lao', size: 12 },
-          titleFont: { family: 'Noto Sans Lao', size: 12 },
-          padding:   10,
+          bodyFont:{ family:'Noto Sans Lao', size:12 },
+          titleFont:{ family:'Noto Sans Lao', size:12 },
+          padding:10,
         },
       },
     },
   });
 }
 
-/* ─── Image Proxy helper (fixes Google Drive CORS for <img> tags) ── */
+/* ─── Image Proxy ────────────────────────────────────────── */
 function toPublicDriveUrl(url) {
   if (!url) return '';
-  /* lh3.googleusercontent.com/d/FILE_ID  →  thumbnail URL (no auth needed) */
   const lh3Match = url.match(/lh3\.googleusercontent\.com\/d\/([a-zA-Z0-9_\-]+)/);
   if (lh3Match) return `https://drive.google.com/thumbnail?id=${lh3Match[1]}&sz=w200`;
-  /* drive.google.com/file/d/FILE_ID/view  →  thumbnail URL */
   const driveMatch = url.match(/\/d\/([a-zA-Z0-9_\-]+)/);
   if (driveMatch) return `https://drive.google.com/thumbnail?id=${driveMatch[1]}&sz=w200`;
   return url;
@@ -749,7 +714,6 @@ function toPublicDriveUrl(url) {
 
 function imgProxy(url) {
   if (!url) return '';
-  /* convert to public thumbnail first, then wrap in weserv for CORS */
   const publicUrl = toPublicDriveUrl(url);
   const bare = publicUrl.replace(/^https?:\/\//, '');
   return `https://images.weserv.nl/?url=${encodeURIComponent(bare)}&w=120&h=120&fit=cover`;
@@ -773,11 +737,9 @@ function renderAssigneeCell(assigneeStr) {
 
 /* ─── Main Render ────────────────────────────────────────── */
 function render() {
-  /* stats cards */
   const tot = tasks.length;
   const dn  = tasks.filter(t => t.status === 'done').length;
   const pct = tot ? Math.round((dn / tot) * 100) : 0;
-
   const incompleteCnt = tasks.filter(t => t.status === 'incomplete').length;
 
   document.getElementById('stats-grid').innerHTML = `
@@ -786,11 +748,9 @@ function render() {
     <div class="stat-card"><b style="color:var(--accent)">${dn}</b><p>ສຳເລັດ</p></div>
     <div class="stat-card"><b style="color:#b8860b">${incompleteCnt}</b><p>ບໍ່ສຳເລັດ</p></div>`;
 
-  /* progress */
   document.getElementById('prog-fill').style.width = pct + '%';
   document.getElementById('prog-pct').textContent  = pct + '%';
 
-  /* status filter tabs */
   const tabData = [
     ['all',        'ທັງໝົດ',   tot],
     ['todo',       'ລໍຖ້າ',    tasks.filter(t => t.status === 'todo').length],
@@ -804,11 +764,9 @@ function render() {
       `${l} <span class="cb">${c}</span></button>`)
     .join('');
 
-  /* chart + person panel */
   updateChart();
   renderPersonPanel();
 
-  /* table */
   const q  = (document.getElementById('searchInput').value || '').toLowerCase();
   const ds = document.getElementById('dateStart').value;
   const de = document.getElementById('dateEnd').value;
@@ -850,7 +808,7 @@ function render() {
     .join('');
 }
 
-/* ─── Multi-Select Dropdown Logic ────────────────────────── */
+/* ─── Multi-Select Dropdown ──────────────────────────────── */
 function populateAssignDD() {
   const opts = document.getElementById('assignOpts');
   if (!opts) return;
@@ -881,7 +839,7 @@ function refreshAssignTags() {
   if (checked.length === 0) {
     ph.style.display = '';
     tagsEl.innerHTML = '';
-    if (badge) { badge.style.display = 'none'; }
+    if (badge) badge.style.display = 'none';
   } else {
     ph.style.display = 'none';
     tagsEl.innerHTML = checked.map(cb =>
@@ -913,7 +871,6 @@ function clearAssignDD() {
   refreshAssignTags();
 }
 
-/* close dropdown when clicking outside */
 document.addEventListener('click', function(e) {
   const wrap = document.getElementById('assignWrap');
   if (wrap && !wrap.contains(e.target)) {
@@ -958,27 +915,17 @@ async function addTask() {
 
   if (selected.length === 0) {
     tasks.push({
-      id:           Date.now(),
-      name,
-      assignee:     'ບໍ່ລະບຸ',
-      assigned:     asEl.value,
-      due:          dEl.value,
-      completed_at: '',
-      prio:         pEl.value,
-      status:       'todo',
+      id: Date.now(), name, assignee:'ບໍ່ລະບຸ',
+      assigned:asEl.value, due:dEl.value, completed_at:'',
+      prio:pEl.value, status:'todo',
     });
   } else {
     const baseId = Date.now();
     selected.forEach((personName, idx) => {
       tasks.push({
-        id:           baseId + idx,
-        name,
-        assignee:     personName,
-        assigned:     asEl.value,
-        due:          dEl.value,
-        completed_at: '',
-        prio:         pEl.value,
-        status:       'todo',
+        id:baseId+idx, name, assignee:personName,
+        assigned:asEl.value, due:dEl.value, completed_at:'',
+        prio:pEl.value, status:'todo',
       });
     });
   }
@@ -1010,8 +957,8 @@ function sendWA(id) {
   });
 }
 
-/* ─── [NEW] AUTO-REFRESH SYSTEM ─────────────────────────── */
-const AUTO_REFRESH_MS = 5 * 60 * 1000; 
+/* ─── Auto-Refresh System ────────────────────────────────── */
+const AUTO_REFRESH_MS = 5 * 60 * 1000;
 let refreshTimer   = null;
 let countdownTimer = null;
 let nextRefreshAt  = null;
@@ -1029,18 +976,13 @@ function startAutoRefresh() {
 
   refreshTimer = setTimeout(async () => {
     await loadFromSheet();
-    startAutoRefresh(); 
+    startAutoRefresh();
   }, AUTO_REFRESH_MS);
 }
 
 function stopAutoRefresh() {
-  if (refreshTimer) { clearTimeout(refreshTimer); refreshTimer = null; }
+  if (refreshTimer)   { clearTimeout(refreshTimer);   refreshTimer   = null; }
   if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
-}
-
-function manualRefresh() {
-  loadFromSheet();
-  startAutoRefresh(); // Restart timer when manually clicking refresh
 }
 
 /* ─── Boot ───────────────────────────────────────────────── */
