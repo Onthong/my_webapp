@@ -143,6 +143,36 @@
   .p-mid{background:#fef5e7;color:#7a4f0a;}
   .p-low{background:#eef4fb;color:#1a4d8f;}
 
+  /* ===== Pagination ===== */
+  .pagination-wrap{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 20px;background:var(--card);
+    border-top:2px solid var(--border);
+    border-radius:0 0 var(--r) var(--r);
+    flex-wrap:wrap;gap:10px;
+  }
+  .pagination-info{font-size:12px;color:#7a7670;font-weight:500;}
+  .pagination-info b{color:#1c1a17;}
+  .pagination-btns{display:flex;align-items:center;gap:5px;flex-wrap:wrap;}
+  .pg-btn{
+    min-width:34px;height:34px;padding:0 8px;
+    border-radius:8px;border:1px solid var(--border);
+    background:var(--card);cursor:pointer;font-size:12px;
+    display:inline-flex;align-items:center;justify-content:center;
+    transition:0.15s;font-family:inherit;font-weight:600;color:#444;
+  }
+  .pg-btn:hover:not(:disabled){background:var(--accent-lt);border-color:#95d5b2;color:var(--accent);}
+  .pg-btn:disabled{opacity:0.35;cursor:not-allowed;}
+  .pg-btn.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .pg-ellipsis{font-size:13px;color:#aaa;padding:0 2px;line-height:34px;}
+  .page-size-wrap{display:flex;align-items:center;gap:8px;font-size:12px;color:#7a7670;}
+  .page-size-sel{
+    padding:6px 10px;border:1px solid var(--border);border-radius:8px;
+    font-size:12px;background:var(--card);cursor:pointer;
+    font-family:inherit;outline:none;color:#444;height:34px;
+  }
+  .page-size-sel:focus{border-color:var(--accent);}
+
   /* ===== Toast ===== */
   .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#000;color:#fff;padding:10px 20px;border-radius:10px;opacity:0;transition:0.3s;z-index:9999;pointer-events:none;}
   .toast.show{opacity:1;}
@@ -152,6 +182,10 @@
     .chart-row{flex-direction:column;height:auto;}
     .chart-box{height:320px;}
     .person-panel{width:100%;height:380px;}
+    .pagination-wrap{flex-direction:column;align-items:flex-start;}
+  }
+  @media(max-width:600px){
+    .page-size-wrap{display:none;}
   }
 </style>
 </head>
@@ -248,12 +282,12 @@
   </div>
 
   <div class="toolbar">
-    <div class="search-box"><input type="text" id="searchInput" oninput="render()" placeholder="🔍 ຄົ້ນຫາຊື່ວຽກ/ຄົນ..."/></div>
+    <div class="search-box"><input type="text" id="searchInput" oninput="onFilterChange()" placeholder="🔍 ຄົ້ນຫາຊື່ວຽກ/ຄົນ..."/></div>
     <div class="date-filter">
       <span style="font-size:11px;font-weight:700;">ເລີ່ມ:</span>
-      <input type="date" id="dateStart" onchange="render()"/>
+      <input type="date" id="dateStart" onchange="onFilterChange()"/>
       <span style="font-size:11px;font-weight:700;">ຫາ:</span>
-      <input type="date" id="dateEnd" onchange="render()"/>
+      <input type="date" id="dateEnd" onchange="onFilterChange()"/>
     </div>
     <div id="statusFilters" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
   </div>
@@ -275,6 +309,22 @@
       </thead>
       <tbody id="tbody"></tbody>
     </table>
+    <!-- ===== Pagination Bar ===== -->
+    <div class="pagination-wrap" id="pagination-wrap">
+      <div class="pagination-info" id="pagination-info"></div>
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+        <div class="page-size-wrap">
+          <span>ສະແດງ:</span>
+          <select class="page-size-sel" id="pageSizeSel" onchange="onPageSizeChange()">
+            <option value="10" selected>10 ລາຍການ</option>
+            <option value="20">20 ລາຍການ</option>
+            <option value="50">50 ລາຍການ</option>
+            <option value="0">ທັງໝົດ</option>
+          </select>
+        </div>
+        <div class="pagination-btns" id="pagination-btns"></div>
+      </div>
+    </div>
   </div>
 
 </main>
@@ -285,12 +335,16 @@
 /* ─── Config ─────────────────────────────────────────────── */
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyhPl7g35lfjCAPoia93ohgUlDalEGGx1hOimRTmeKCpWSzmUlRoywCljqm8-NIBGT_bg/exec";
 
-let tasks   = [];
-let users   = [];
+let tasks    = [];
+let users    = [];
 let filterSt = 'all';
 let myChart  = null;
 let userRole = 'guest';
 let userName = '';
+
+/* ─── Pagination State ───────────────────────────────────── */
+let currentPage = 1;
+let pageSize    = 10;   // default 10
 
 /* ─── Lookup Maps ─────────────────────────────────────────── */
 const ST_NEXT  = { todo:'doing', doing:'done', done:'todo', incomplete:'todo' };
@@ -301,7 +355,7 @@ const MV_LBL     = { todo:'▶ ເລີ່ມ', doing:'✓ ສຳເລັດ',
 const MV_CLS     = { todo:'btn-go', doing:'btn-accent', done:'', incomplete:'' };
 const PRIO_LABEL = { h:'🔥 ຮີບດ່ວນ', m:'⚡ ປານກາງ', l:'💤 ຕໍ່າ' };
 
-/* ─── Auth — Server-Side Login (GET + query params to avoid CORS) ── */
+/* ─── Auth ─────────────────────────────────────────────────── */
 async function handleLogin() {
   const u   = document.getElementById('userInput').value.trim();
   const p   = document.getElementById('passInput').value;
@@ -320,7 +374,6 @@ async function handleLogin() {
   msg.style.display = 'none';
 
   try {
-    // ── ສົ່ງ credentials ຜ່ານ GET query string (ຫຼີກລ້ຽງ CORS preflight) ──
     const url = SCRIPT_URL
       + '?action=login'
       + '&username=' + encodeURIComponent(u)
@@ -351,7 +404,6 @@ async function handleLogin() {
   }
 }
 
-// ── ໃຊ້ sessionStorage (ຫາຍເມື່ອປິດ browser tab) ──
 function checkPreviousLogin() {
   const isLoggedIn = sessionStorage.getItem('isLoggedIn');
   const savedRole  = sessionStorage.getItem('userRole');
@@ -438,6 +490,20 @@ function showToast(m) {
   t.textContent  = m;
   t.className    = 'toast show';
   setTimeout(() => { t.className = 'toast'; }, 2500);
+}
+
+/* ─── Filter helper — resets page when filter changes ──────── */
+function onFilterChange() {
+  currentPage = 1;
+  render();
+}
+
+/* ─── Page size selector ─────────────────────────────────── */
+function onPageSizeChange() {
+  const sel = document.getElementById('pageSizeSel');
+  pageSize    = parseInt(sel.value, 10); // 0 = show all
+  currentPage = 1;
+  render();
 }
 
 /* ─── Person Stats Computation ───────────────────────────── */
@@ -735,6 +801,143 @@ function renderAssigneeCell(assigneeStr) {
   }).join('');
 }
 
+/* ─── Pagination Helper ──────────────────────────────────── */
+function buildPaginationHTML(totalItems, curPage, pgSize) {
+  // pgSize === 0 means "show all" → hide pagination controls
+  if (pgSize === 0 || totalItems === 0) {
+    return { html: '', totalPages: 1 };
+  }
+
+  const totalPages = Math.ceil(totalItems / pgSize);
+
+  // Info text
+  const from = (curPage - 1) * pgSize + 1;
+  const to   = Math.min(curPage * pgSize, totalItems);
+  document.getElementById('pagination-info').innerHTML =
+    `ສະແດງ <b>${from}–${to}</b> ຈາກທັງໝົດ <b>${totalItems}</b> ລາຍການ`;
+
+  // Build page number buttons with smart ellipsis
+  const btns = [];
+
+  // Prev button
+  btns.push(`<button class="pg-btn" onclick="goToPage(${curPage - 1})" ${curPage <= 1 ? 'disabled' : ''}>‹ ກ່ອນ</button>`);
+
+  const pages = [];
+  if (totalPages <= 7) {
+    for (let i = 1; i <= totalPages; i++) pages.push(i);
+  } else {
+    pages.push(1);
+    if (curPage > 3) pages.push('...');
+    for (let i = Math.max(2, curPage - 1); i <= Math.min(totalPages - 1, curPage + 1); i++) {
+      pages.push(i);
+    }
+    if (curPage < totalPages - 2) pages.push('...');
+    pages.push(totalPages);
+  }
+
+  pages.forEach(p => {
+    if (p === '...') {
+      btns.push(`<span class="pg-ellipsis">…</span>`);
+    } else {
+      btns.push(`<button class="pg-btn${p === curPage ? ' active' : ''}" onclick="goToPage(${p})">${p}</button>`);
+    }
+  });
+
+  // Next button
+  btns.push(`<button class="pg-btn" onclick="goToPage(${curPage + 1})" ${curPage >= totalPages ? 'disabled' : ''}>ຕໍ່ໄປ ›</button>`);
+
+  return { html: btns.join(''), totalPages };
+}
+
+function goToPage(p) {
+  const totalFiltered = getFilteredTasks().length;
+  const totalPages = pageSize === 0 ? 1 : Math.ceil(totalFiltered / pageSize);
+  currentPage = Math.max(1, Math.min(p, totalPages));
+  renderTable();
+  // Smooth scroll to table
+  document.querySelector('.table-wrapper').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+/* ─── Get Filtered Tasks (shared by render & pagination) ──── */
+function getFilteredTasks() {
+  const q  = (document.getElementById('searchInput')?.value || '').toLowerCase();
+  const ds = document.getElementById('dateStart')?.value || '';
+  const de = document.getElementById('dateEnd')?.value || '';
+
+  return tasks.filter(t => {
+    const matchSearch = t.name.toLowerCase().includes(q) ||
+                        (t.assignee || '').toLowerCase().includes(q);
+    const matchStatus = filterSt === 'all' || t.status === filterSt;
+    let matchDate = true;
+    if (ds && de) matchDate = t.assigned >= ds && t.assigned <= de;
+    return matchSearch && matchStatus && matchDate;
+  });
+}
+
+/* ─── Render Table + Pagination Only ────────────────────────  */
+function renderTable() {
+  const filtered   = getFilteredTasks();
+  const totalItems = filtered.length;
+
+  // Clamp currentPage
+  if (pageSize > 0) {
+    const totalPages = Math.ceil(totalItems / pageSize) || 1;
+    if (currentPage > totalPages) currentPage = totalPages;
+  }
+
+  // Slice for current page
+  let pageItems;
+  if (pageSize === 0) {
+    pageItems = filtered;                   // show all
+  } else {
+    const start = (currentPage - 1) * pageSize;
+    pageItems   = filtered.slice(start, start + pageSize);
+  }
+
+  // Global row index offset for the # column
+  const offset = pageSize === 0 ? 0 : (currentPage - 1) * pageSize;
+
+  document.getElementById('tbody').innerHTML = pageItems
+    .map((t, i) => {
+      const rowNum = offset + i + 1;
+      const incBtn = (t.status !== 'incomplete' && t.status !== 'done')
+        ? `<button class="btn btn-sm" style="background:#fffbea;color:#b8860b;border:1px solid #f0d060;" onclick="markIncomplete(${t.id})" title="ໝາຍວ່າບໍ່ສຳເລັດ">⚠️ ບໍ່ສຳເລັດ</button>`
+        : '';
+      const actions = userRole === 'admin'
+        ? `<td style="display:flex;gap:6px;flex-wrap:wrap;">
+             <button class="btn btn-sm ${MV_CLS[t.status]}" onclick="moveTask(${t.id})">${MV_LBL[t.status]}</button>
+             ${incBtn}
+             <button class="btn btn-sm btn-wa" onclick="sendWA(${t.id})">WA</button>
+             <button class="btn btn-sm btn-danger" onclick="delTask(${t.id})" title="ລຶບ">ລຶບ</button>
+           </td>`
+        : `<td>🔒 View Only</td>`;
+
+      return `<tr>
+        <td style="color:#888;font-family:'DM Mono'">${rowNum}</td>
+        <td><b style="color:#111">${t.name}</b></td>
+        <td style="font-weight:500">${renderAssigneeCell(t.assignee)}</td>
+        <td>${fmtDate(t.assigned)}</td>
+        <td>${fmtDate(t.due)}</td>
+        <td style="color:var(--accent);font-weight:600">${fmtDate(t.completed_at)}</td>
+        <td><span class="badge ${PRIO_CLS[t.prio] || 'b-todo'}">${PRIO_LABEL[t.prio] || t.prio}</span></td>
+        <td><span class="badge ${ST_CLS[t.status]}">${ST_LABEL[t.status]}</span></td>
+        ${actions}
+      </tr>`;
+    })
+    .join('');
+
+  // Render pagination buttons
+  const { html } = buildPaginationHTML(totalItems, currentPage, pageSize);
+  document.getElementById('pagination-btns').innerHTML = html;
+
+  // Update info when showing all
+  if (pageSize === 0) {
+    document.getElementById('pagination-info').innerHTML =
+      `ສະແດງທັງໝົດ <b>${totalItems}</b> ລາຍການ`;
+    document.getElementById('pagination-btns').innerHTML = '';
+  }
+}
+
 /* ─── Main Render ────────────────────────────────────────── */
 function render() {
   const tot = tasks.length;
@@ -760,52 +963,13 @@ function render() {
   ];
   document.getElementById('statusFilters').innerHTML = tabData
     .map(([f, l, c]) =>
-      `<button class="fp${filterSt === f ? ' on' : ''}" onclick="filterSt='${f}';render()">` +
+      `<button class="fp${filterSt === f ? ' on' : ''}" onclick="filterSt='${f}';currentPage=1;render()">` +
       `${l} <span class="cb">${c}</span></button>`)
     .join('');
 
   updateChart();
   renderPersonPanel();
-
-  const q  = (document.getElementById('searchInput').value || '').toLowerCase();
-  const ds = document.getElementById('dateStart').value;
-  const de = document.getElementById('dateEnd').value;
-
-  document.getElementById('tbody').innerHTML = tasks
-    .filter(t => {
-      const matchSearch = t.name.toLowerCase().includes(q) ||
-                          (t.assignee || '').toLowerCase().includes(q);
-      const matchStatus = filterSt === 'all' || t.status === filterSt;
-      let matchDate = true;
-      if (ds && de) matchDate = t.assigned >= ds && t.assigned <= de;
-      return matchSearch && matchStatus && matchDate;
-    })
-    .map((t, i) => {
-      const incBtn = (t.status !== 'incomplete' && t.status !== 'done')
-        ? `<button class="btn btn-sm" style="background:#fffbea;color:#b8860b;border:1px solid #f0d060;" onclick="markIncomplete(${t.id})" title="ໝາຍວ່າບໍ່ສຳເລັດ">⚠️ ບໍ່ສຳເລັດ</button>`
-        : '';
-      const actions = userRole === 'admin'
-        ? `<td style="display:flex;gap:6px;flex-wrap:wrap;">
-             <button class="btn btn-sm ${MV_CLS[t.status]}" onclick="moveTask(${t.id})">${MV_LBL[t.status]}</button>
-             ${incBtn}
-             <button class="btn btn-sm btn-wa" onclick="sendWA(${t.id})">WA</button>
-             <button class="btn btn-sm btn-danger" onclick="delTask(${t.id})" title="ລຶບ">ລຶບ</button>
-           </td>`
-        : `<td>🔒 View Only</td>`;
-
-      return `<tr>
-        <td style="color:#888;font-family:'DM Mono'">${i + 1}</td>
-        <td><b style="color:#111">${t.name}</b></td>
-        <td style="font-weight:500">${renderAssigneeCell(t.assignee)}</td>
-        <td>${fmtDate(t.assigned)}</td>
-        <td>${fmtDate(t.due)}</td>
-        <td style="color:var(--accent);font-weight:600">${fmtDate(t.completed_at)}</td>
-        <td><span class="badge ${PRIO_CLS[t.prio] || 'b-todo'}">${PRIO_LABEL[t.prio] || t.prio}</span></td>
-        <td><span class="badge ${ST_CLS[t.status]}">${ST_LABEL[t.status]}</span></td>
-        ${actions}
-      </tr>`;
-    })
-    .join('');
+  renderTable();
 }
 
 /* ─── Multi-Select Dropdown ──────────────────────────────── */
